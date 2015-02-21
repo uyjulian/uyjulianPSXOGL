@@ -16,8 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "stdafx.h"
-
 ////////////////////////////////////////////////////////////////////////////////////
 // Texture related functions are here !
 //
@@ -60,8 +58,7 @@
 
 #include "externals.h"
 
-#define CLUTCHK 0x00060000
-#define CLUTSHIFT 17
+
 
 ////////////////////////////////////////////////////////////////////////
 // texture conversion buffer ..
@@ -69,35 +66,14 @@
 
 static GLubyte ubPaletteBuffer[256][4];
 static GLuint gTexMovieName = 0;
-GLuint gTexBlurName = 0;
+static GLuint gTexBlurName = 0;
 GLuint gTexFrameName = 0;
-int iTexGarbageCollection = 1;
+static int iTexGarbageCollection = 1;
 static uint32_t dwTexPageComp = 0;
-int iVRamSize = 0;
-int iClampType = GL_CLAMP_TO_EDGE;
+static int iClampType = GL_CLAMP_TO_EDGE;
 
 void (*LoadSubTexFn)(int, int, int16_t, int16_t);
 uint32_t (*PalTexturedColourFn)(uint32_t);
-
-////////////////////////////////////////////////////////////////////////
-// defines
-////////////////////////////////////////////////////////////////////////
-
-#define CSUBSIZE 2048
-
-#define CSUBSIZES 4096
-
-#define SOFFA 0
-#define SOFFB 1024
-#define SOFFC 2048
-#define SOFFD 3072
-
-#define MAXWNDTEXCACHE 128
-
-#define XCHECK(pos1, pos2)                                                                                             \
-	((pos1.c[0] >= pos2.c[1]) && (pos1.c[1] <= pos2.c[0]) && (pos1.c[2] >= pos2.c[3]) && (pos1.c[3] <= pos2.c[2]))
-#define INCHECK(pos2, pos1)                                                                                            \
-	((pos1.c[0] <= pos2.c[0]) && (pos1.c[1] >= pos2.c[1]) && (pos1.c[2] <= pos2.c[2]) && (pos1.c[3] >= pos2.c[3]))
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -110,20 +86,19 @@ void DefineSubTextureSort(void);
 // some globals
 ////////////////////////////////////////////////////////////////////////
 
-GLint giWantedRGBA = 4;
-GLint giWantedFMT = GL_RGBA;
-GLint giWantedTYPE = GL_UNSIGNED_BYTE;
+static GLint giWantedRGBA = 4;
+static GLint giWantedFMT = GL_RGBA;
+static GLint giWantedTYPE = GL_UNSIGNED_BYTE;
 int GlobalTexturePage;
 static GLint XTexS;
 static GLint YTexS;
 static GLint DXTexS;
 static GLint DYTexS;
-int iSortTexCnt = 32;
-int iFrameTexType = 0;
+static int iSortTexCnt = 32;
+static int iFrameTexType = 1;
 int iFrameReadType = 0;
 
 uint32_t (*TCF[2])(uint32_t);
-uint16_t (*PTCF[2])(uint16_t);
 
 ////////////////////////////////////////////////////////////////////////
 // texture cache implementation
@@ -156,8 +131,6 @@ typedef struct textureSubCacheEntryTagS
 
 //---------------------------------------------
 
-#define MAXTPAGES_MAX 64
-#define MAXSORTTEX_MAX 196
 
 //---------------------------------------------
 
@@ -221,9 +194,6 @@ uint32_t XP8RGBA_1(uint32_t BGR)
 ////////////////////////////////////////////////////////////////////////
 // CHECK TEXTURE MEM (on plugin startup)
 ////////////////////////////////////////////////////////////////////////
-
-int iFTexA = 512;
-int iFTexB = 512;
 
 void CheckTextureMemory(void)
 {
@@ -1984,16 +1954,6 @@ void LoadSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy)
 
 
 }
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//
-// ogl texture defines
-//
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 

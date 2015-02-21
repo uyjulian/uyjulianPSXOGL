@@ -16,8 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "stdafx.h"
-
 #include "externals.h"
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -25,16 +23,9 @@
 
 // resolution/ratio vars
 
-int iResX;
-int iResY;
+int iResX = 640;
+int iResY = 480;
 RECT rRatioRect;
-
-// psx mask related vars
-
-bool bCheckMask = false;
-int iSetMask = 0;
-uint16_t sSetMask = 0;
-uint32_t lSetMask = 0;
 
 // drawing/coord vars
 
@@ -43,19 +34,61 @@ GLubyte gl_ux[8];
 GLubyte gl_vy[8];
 int16_t sprtY, sprtX, sprtH, sprtW;
 
-PFNGLBLENDEQU glBlendEquationEXTEx = glBlendEquation;
-// gfx card buffer infos
+// gl utils
 
-GLbitfield uiBufferBits = GL_COLOR_BUFFER_BIT;
-
-////////////////////////////////////////////////////////////////////////
-// Get extension infos (f.e. pal textures / packed pixels)
-////////////////////////////////////////////////////////////////////////
-
-static void GetExtInfos(void)
+void clearWithColor(int clearColor)
 {
+	GLclampf g, b, r;
 
+	g = ((GLclampf)GREEN(clearColor)) / 255.0f;
+	b = ((GLclampf)BLUE(clearColor)) / 255.0f;
+	r = ((GLclampf)RED(clearColor)) / 255.0f;
+
+	glClearColor(r, g, b, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
+
+void clearToBlack(void)
+{
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+
+OGLVertexGLM OGLVertexToOGLVertexGLM(OGLVertex from)
+{
+	OGLVertexGLM to;
+
+	to.Position.x = from.x;
+	to.Position.y = from.y;
+	to.Position.z = from.z;
+	to.Texture.x = from.sow;
+	to.Texture.y = from.tow;
+	to.Color.r = from.c.col[0];
+	to.Color.g = from.c.col[1];
+	to.Color.b = from.c.col[2];
+	to.Color.a = from.c.col[3];
+	to.LColor = from.c.lcol;
+	return to;
+}
+
+OGLVertex OGLVertexGLMToOGLVertex(OGLVertexGLM from)
+{
+	OGLVertex to;
+	to.x = from.Position.x;
+	to.y = from.Position.y;
+	to.z = from.Position.z;
+	to.sow = from.Texture.x;
+	to.tow = from.Texture.y;
+	to.c.col[0] = from.Color.r;
+	to.c.col[1] = from.Color.g;
+	to.c.col[2] = from.Color.b;
+	to.c.col[3] = from.Color.a;
+	to.c.lcol = from.LColor;
+	return to;
+}
+
+// gl utils end
 
 ////////////////////////////////////////////////////////////////////////
 // Setup some stuff depending on user settings or in-game toggle
@@ -63,19 +96,8 @@ static void GetExtInfos(void)
 
 void SetExtGLFuncs(void)
 {
-	//----------------------------------------------------//
 
-	SetFixes(); // update fix infos
-
-	//----------------------------------------------------//
-
-	//----------------------------------------------------//
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	//----------------------------------------------------//
-	// init standard tex quality 0-2, and big alpha mode 3
-
-
 
 	TCF[0] = XP8RGBA_0;
 	PalTexturedColourFn = XP8RGBA; // -> init col func
@@ -110,16 +132,13 @@ int GLinitialize()
 	glLoadIdentity();
 	glOrtho(0, PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0, -1, 1);
 
-	uiBufferBits = GL_COLOR_BUFFER_BIT;
 	glDisable(GL_DEPTH_TEST);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // first buffer clear
-	glClear(uiBufferBits);
+	clearToBlack();
 
 	glPolygonMode(GL_FRONT, GL_FILL);
 	glPolygonMode(GL_BACK, GL_FILL);
 
-	GetExtInfos();      // get ext infos
 	SetExtGLFuncs();    // init all kind of stuff (tex function pointers)
 
 	glEnable(GL_ALPHA_TEST); // wanna alpha test
@@ -173,8 +192,7 @@ int GLrefresh()
 	glLoadIdentity();
 	glOrtho(0, PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0, -1, 1);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // first buffer clear
-	glClear(uiBufferBits);
+	clearToBlack();
 
 	return 0;
 }
@@ -185,17 +203,8 @@ int GLrefresh()
 
 void GLcleanup()
 {
-
 	CleanupTextureStore(); // bye textures
 }
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////
 // Offset stuff
@@ -365,8 +374,7 @@ static __inline bool CheckCoord2()
 // Pete's way: a very easy (and hopefully fast) approach for lines
 // without sqrt... using a small float -> int16_t cast trick :)
 
-#define VERTEX_OFFX 0.2f
-#define VERTEX_OFFY 0.2f
+
 
 bool offsetline(void)
 {
@@ -461,15 +469,6 @@ bool offsetline(void)
 	if (vertex[0].x == vertex[1].x && vertex[2].x == vertex[3].x && vertex[0].y == vertex[3].y &&
 	    vertex[1].y == vertex[2].y)
 		return false;
-
-	vertex[0].x -= VERTEX_OFFX; // otherwise a small offset
-	vertex[0].y -= VERTEX_OFFY; // to get better accuracy
-	vertex[1].x -= VERTEX_OFFX;
-	vertex[1].y -= VERTEX_OFFY;
-	vertex[2].x -= VERTEX_OFFX;
-	vertex[2].y -= VERTEX_OFFY;
-	vertex[3].x -= VERTEX_OFFX;
-	vertex[3].y -= VERTEX_OFFY;
 
 	return false;
 }
@@ -791,15 +790,11 @@ void assignTexture4(void)
 ////////////////////////////////////////////////////////////////////////
 // render pos / buffers
 ////////////////////////////////////////////////////////////////////////
-#define EqualRect(pr1, pr2)                                                                                            \
-	((pr1)->left == (pr2)->left && (pr1)->top == (pr2)->top && (pr1)->right == (pr2)->right &&                         \
-	 (pr1)->bottom == (pr2)->bottom)
+
 
 ////////////////////////////////////////////////////////////////////////
 // SetDisplaySettings: "simply" calcs the new drawing area and updates
 //                     the ogl clipping (scissor)
-
-bool bSetClip = false;
 
 void SetOGLDisplaySettings(bool DisplaySet)
 {
@@ -853,7 +848,7 @@ void SetOGLDisplaySettings(bool DisplaySet)
 		r.right = PSXDisplay.DrawArea.x1 - PSXDisplay.DisplayPosition.x;
 	}
 
-	if (!bSetClip && EqualRect(&r, &rprev) && iOldX == PSXDisplay.DisplayMode.x && iOldY == PSXDisplay.DisplayMode.y)
+	if (EqualRect(&r, &rprev) && iOldX == PSXDisplay.DisplayMode.x && iOldY == PSXDisplay.DisplayMode.y)
 		return;
 
 	rprev = r;

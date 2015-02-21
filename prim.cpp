@@ -15,21 +15,8 @@
  *   additional informations.                                              *
  *                                                                         *
  ***************************************************************************/
-
-#include "stdafx.h"
-
+ 
 #include "externals.h"
-
-
-////////////////////////////////////////////////////////////////////////
-// defines
-////////////////////////////////////////////////////////////////////////
-
-#define DEFOPAQUEON                                                                                                    \
-	glAlphaFunc(GL_EQUAL, 0.0f);                                                                                       \
-	bBlendEnable = false;                                                                                              \
-	glDisable(GL_BLEND);
-#define DEFOPAQUEOFF glAlphaFunc(GL_GREATER, 0.49f);
 
 ////////////////////////////////////////////////////////////////////////
 // globals
@@ -38,7 +25,7 @@
 static bool bDrawTextured; // current active drawing states
 static bool bDrawSmoothShaded;
 bool bOldSmoothShaded;
-bool bDrawNonShaded;
+static bool bDrawNonShaded;
 bool bDrawMultiPass;
 int iDrawnSomething = 0;
 
@@ -47,25 +34,23 @@ bool bRenderFrontBuffer = false; // flag for front buffer rendering
 GLubyte ubGloAlpha;          // texture alpha
 GLubyte ubGloColAlpha;       // color alpha
 bool bFullVRam = false;      // sign for tex win
-bool bUseMultiPass;          // sign for multi pass
 GLuint gTexName;             // binded texture
 bool bTexEnabled;            // texture enable flag
 bool bBlendEnable;           // blend enable flag
 PSXRect_t xrUploadArea;      // rect to upload
 PSXRect_t xrUploadAreaIL;    // rect to upload
-PSXRect_t xrUploadAreaRGB24; // rect to upload rgb24
+static PSXRect_t xrUploadAreaRGB24; // rect to upload rgb24
 int iSpriteTex = 0;          // flag for "hey, it's a sprite"
 uint16_t usMirror;           // mirror, mirror on the wall
 
 bool bNeedUploadAfter = false; // sign for uploading in next frame
 bool bNeedUploadTest = false;  // sign for upload test
 bool bUsingTWin = false;       // tex win active flag
-bool bUsingMovie = false;      // movie active flag
+static bool bUsingMovie = false;      // movie active flag
 PSXRect_t xrMovieArea;         // rect for movie upload
 int16_t sSprite_ux2;           // needed for sprire adjust
 int16_t sSprite_vy2;           //
-uint32_t ulOLDCOL = 0;         // active color
-uint32_t ulClutID;             // clut
+static uint32_t ulClutID;             // clut
 
 int drawX, drawY, drawW, drawH; // offscreen drawing checkers
 int16_t sxmin, sxmax, symin, symax;
@@ -182,15 +167,15 @@ static __inline void PRIMdrawTexGouraudTriColor(OGLVertex *vertex1, OGLVertex *v
 {
 	glBegin(GL_TRIANGLES);
 
-	SETPCOL(vertex1);
+	glColor4ubv(vertex1->c.col);
 	glTexCoord2fv(&vertex1->sow);
 	glVertex3fv(&vertex1->x);
 
-	SETPCOL(vertex2);
+	glColor4ubv(vertex2->c.col);
 	glTexCoord2fv(&vertex2->sow);
 	glVertex3fv(&vertex2->x);
 
-	SETPCOL(vertex3);
+	glColor4ubv(vertex3->c.col);
 	glTexCoord2fv(&vertex3->sow);
 	glVertex3fv(&vertex3->x);
 	glEnd();
@@ -202,19 +187,20 @@ static __inline void PRIMdrawTexGouraudTriColorQuad(OGLVertex *vertex1, OGLVerte
                                                     OGLVertex *vertex4)
 {
 	glBegin(GL_TRIANGLE_STRIP);
-	SETPCOL(vertex1);
+
+	glColor4ubv(vertex1->c.col);
 	glTexCoord2fv(&vertex1->sow);
 	glVertex3fv(&vertex1->x);
 
-	SETPCOL(vertex2);
+	glColor4ubv(vertex2->c.col);
 	glTexCoord2fv(&vertex2->sow);
 	glVertex3fv(&vertex2->x);
 
-	SETPCOL(vertex4);
+	glColor4ubv(vertex4->c.col);
 	glTexCoord2fv(&vertex4->sow);
 	glVertex3fv(&vertex4->x);
 
-	SETPCOL(vertex3);
+	glColor4ubv(vertex3->c.col);
 	glTexCoord2fv(&vertex3->sow);
 	glVertex3fv(&vertex3->x);
 	glEnd();
@@ -248,13 +234,13 @@ static __inline void PRIMdrawTri2(OGLVertex *vertex1, OGLVertex *vertex2, OGLVer
 static __inline void PRIMdrawGouraudTriColor(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
 	glBegin(GL_TRIANGLES);
-	SETPCOL(vertex1);
+	glColor4ubv(vertex1->c.col);
 	glVertex3fv(&vertex1->x);
 
-	SETPCOL(vertex2);
+	glColor4ubv(vertex2->c.col);
 	glVertex3fv(&vertex2->x);
 
-	SETPCOL(vertex3);
+	glColor4ubv(vertex3->c.col);
 	glVertex3fv(&vertex3->x);
 	glEnd();
 }
@@ -265,16 +251,16 @@ static __inline void PRIMdrawGouraudTri2Color(OGLVertex *vertex1, OGLVertex *ver
                                               OGLVertex *vertex4)
 {
 	glBegin(GL_TRIANGLE_STRIP);
-	SETPCOL(vertex1);
+	glColor4ubv(vertex1->c.col);
 	glVertex3fv(&vertex1->x);
 
-	SETPCOL(vertex3);
+	glColor4ubv(vertex3->c.col);
 	glVertex3fv(&vertex3->x);
 
-	SETPCOL(vertex2);
+	glColor4ubv(vertex2->c.col);
 	glVertex3fv(&vertex2->x);
 
-	SETPCOL(vertex4);
+	glColor4ubv(vertex4->c.col);
 	glVertex3fv(&vertex4->x);
 	glEnd();
 }
@@ -284,8 +270,7 @@ static __inline void PRIMdrawGouraudTri2Color(OGLVertex *vertex1, OGLVertex *ver
 static __inline void PRIMdrawFlatLine(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
 	glBegin(GL_QUADS);
-
-	SETPCOL(vertex1);
+	glColor4ubv(vertex1->c.col);
 
 	glVertex3fv(&vertex1->x);
 	glVertex3fv(&vertex2->x);
@@ -300,16 +285,16 @@ static __inline void PRIMdrawGouraudLine(OGLVertex *vertex1, OGLVertex *vertex2,
 {
 	glBegin(GL_QUADS);
 
-	SETPCOL(vertex1);
+	glColor4ubv(vertex1->c.col);
 	glVertex3fv(&vertex1->x);
 
-	SETPCOL(vertex2);
+	glColor4ubv(vertex2->c.col);
 	glVertex3fv(&vertex2->x);
 
-	SETPCOL(vertex3);
+	glColor4ubv(vertex3->c.col);
 	glVertex3fv(&vertex3->x);
 
-	SETPCOL(vertex4);
+	glColor4ubv(vertex4->c.col);
 	glVertex3fv(&vertex4->x);
 	glEnd();
 }
@@ -377,27 +362,9 @@ static void SetSemiTrans(void)
 
 	if (TransSets[GlobalTextABR].srcFac != obm1 || TransSets[GlobalTextABR].dstFac != obm2)
 	{
-		if (glBlendEquationEXTEx == NULL)
-		{
-			obm1 = TransSets[GlobalTextABR].srcFac;
-			obm2 = TransSets[GlobalTextABR].dstFac;
-			glBlendFunc(obm1, obm2); // set blend func
-		}
-		else if (TransSets[GlobalTextABR].dstFac != GL_ONE_MINUS_SRC_COLOR)
-		{
-			if (obm2 == GL_ONE_MINUS_SRC_COLOR)
-				glBlendEquationEXTEx(FUNC_ADD_EXT);
-			obm1 = TransSets[GlobalTextABR].srcFac;
-			obm2 = TransSets[GlobalTextABR].dstFac;
-			glBlendFunc(obm1, obm2); // set blend func
-		}
-		else
-		{
-			glBlendEquationEXTEx(FUNC_REVERSESUBTRACT_EXT);
-			obm1 = TransSets[GlobalTextABR].srcFac;
-			obm2 = TransSets[GlobalTextABR].dstFac;
-			glBlendFunc(GL_ONE, GL_ONE); // set blend func
-		}
+		obm1 = TransSets[GlobalTextABR].srcFac;
+		obm2 = TransSets[GlobalTextABR].dstFac;
+		glBlendFunc(obm1, obm2); // set blend func
 	}
 }
 
@@ -550,7 +517,7 @@ static void SetRenderMode(uint32_t DrawAttributes, bool bSCol)
 			vertex[0].c.lcol = DoubleBGR2RGB(DrawAttributes);
 		}
 		vertex[0].c.col[3] = ubGloAlpha; // -> set color with
-		SETCOL(vertex[0]);               //    texture alpha
+		glColor4ubv(vertex[0].c.col);               //    texture alpha
 	}
 
 	if (bDrawSmoothShaded != bOldSmoothShaded) // shading changed?
@@ -1010,7 +977,7 @@ void UploadScreen(int Position)
 	bDrawSmoothShaded = false;
 
 	vertex[0].c.lcol = 0xffffffff;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	SetOGLDisplaySettings(0);
 
@@ -1259,48 +1226,6 @@ static void cmdTextureWindow(uint8_t *baseAddr)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
-// mmm, Lewpy uses that in TileS ... I don't ;)
-////////////////////////////////////////////////////////////////////////
-
-/*
-void ClampToPSXDrawAreaOffset(int16_t *x0, int16_t *y0, int16_t *x1, int16_t *y1)
-{
- if (*x0 < PSXDisplay.DrawArea.x0)
-  {
-   *x1 -= (PSXDisplay.DrawArea.x0 - *x0);
-   *x0 = PSXDisplay.DrawArea.x0;
-  }
- else
- if (*x0 > PSXDisplay.DrawArea.x1)
-  {
-   *x0 = PSXDisplay.DrawArea.x1;
-   *x1 = 0;
-  }
-
- if (*y0 < PSXDisplay.DrawArea.y0)
-  {
-   *y1 -= (PSXDisplay.DrawArea.y0 - *y0);
-   *y0 = PSXDisplay.DrawArea.y0;
-  }
- else
- if (*y0 > PSXDisplay.DrawArea.y1)
-  {
-   *y0 = PSXDisplay.DrawArea.y1;
-   *y1 = 0;
-  }
-
- if (*x1 < 0) *x1 = 0;
-
- if ((*x1 + *x0) > PSXDisplay.DrawArea.x1)
-  *x1 = (PSXDisplay.DrawArea.x1 -  *x0 + 1);
-
- if (*y1 < 0) *y1 = 0;
-
- if ((*y1 + *y0) > PSXDisplay.DrawArea.y1)
-  *y1 = (PSXDisplay.DrawArea.y1 -  *y0 + 1);
-}
-*/
 
 ////////////////////////////////////////////////////////////////////////
 // Check draw area dimensions
@@ -1683,13 +1608,7 @@ static void primBlkFill(uint8_t *baseAddr)
 		if ((lx0 <= pd->DisplayPosition.x + 16) && (ly0 <= pd->DisplayPosition.y + 16) &&
 		    (lx2 >= pd->DisplayEnd.x - 16) && (ly2 >= pd->DisplayEnd.y - 16))
 		{
-			GLclampf g, b, r;
-			g = ((GLclampf)GREEN(gpuData[0])) / 255.0f;
-			b = ((GLclampf)BLUE(gpuData[0])) / 255.0f;
-			r = ((GLclampf)RED(gpuData[0])) / 255.0f;
-
-			glClearColor(r, g, b, 1.0f);
-			glClear(uiBufferBits);
+			clearWithColor(gpuData[0]);
 			gl_z = 0.0f;
 
 			if (gpuData[0] != 0x02000000 && (ly0 > pd->DisplayPosition.y || ly2 < pd->DisplayEnd.y))
@@ -1699,7 +1618,7 @@ static void primBlkFill(uint8_t *baseAddr)
 				SetRenderState((uint32_t)0x01000000);
 				SetRenderMode((uint32_t)0x01000000, false);
 				vertex[0].c.lcol = 0xff000000;
-				SETCOL(vertex[0]);
+				glColor4ubv(vertex[0].c.col);
 				if (ly0 > pd->DisplayPosition.y)
 				{
 					vertex[0].x = 0;
@@ -1734,7 +1653,7 @@ static void primBlkFill(uint8_t *baseAddr)
 			SetRenderState((uint32_t)0x01000000);
 			SetRenderMode((uint32_t)0x01000000, false);
 			vertex[0].c.lcol = gpuData[0] | 0xff000000;
-			SETCOL(vertex[0]);
+			glColor4ubv(vertex[0].c.col);
 			PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 		}
 	}
@@ -2020,7 +1939,7 @@ static void primTileS(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 
@@ -2063,7 +1982,7 @@ static void primTile1(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 
@@ -2105,7 +2024,7 @@ static void primTile8(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 
@@ -2147,7 +2066,7 @@ static void primTile16(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 
@@ -2728,7 +2647,7 @@ static void primPolyF4(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawTri2(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 
@@ -3381,7 +3300,7 @@ static void primPolyGT3(uint8_t *baseAddr)
 	{
 		vertex[0].c.lcol = 0xffffff;
 		vertex[0].c.col[3] = ubGloAlpha;
-		SETCOL(vertex[0]);
+		glColor4ubv(vertex[0].c.col);
 
 		PRIMdrawTexturedTri(&vertex[0], &vertex[1], &vertex[2]);
 
@@ -3515,7 +3434,7 @@ static void primPolyGT4(uint8_t *baseAddr)
 	{
 		vertex[0].c.lcol = 0xffffff;
 		vertex[0].c.col[3] = ubGloAlpha;
-		SETCOL(vertex[0]);
+		glColor4ubv(vertex[0].c.col);
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[3], &vertex[2]);
 
@@ -3590,7 +3509,7 @@ static void primPolyF3(uint8_t *baseAddr)
 
 	vertex[0].c.lcol = gpuData[0];
 	vertex[0].c.col[3] = ubGloColAlpha;
-	SETCOL(vertex[0]);
+	glColor4ubv(vertex[0].c.col);
 
 	PRIMdrawTri(&vertex[0], &vertex[1], &vertex[2]);
 

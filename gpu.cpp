@@ -16,13 +16,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "stdafx.h"
-
 #include "externals.h"
-
-static const uint8_t version = 1; 
-static const uint8_t revision = 0;
-static const uint8_t build = 1;
 
 ////////////////////////////////////////////////////////////////////////
 // memory image of the PSX vram
@@ -30,17 +24,16 @@ static const uint8_t build = 1;
 
 static uint8_t *psxVSecure;
 uint8_t *psxVub;
-int8_t *psxVsb;
+static int8_t *psxVsb;
 uint16_t *psxVuw;
 static uint16_t *psxVuw_eom;
-int16_t *psxVsw;
-uint32_t *psxVul;
-int32_t *psxVsl;
+static int16_t *psxVsw;
+static uint32_t *psxVul;
+static int32_t *psxVsl;
 
 GLfloat gl_z = 0.0f;
 bool bNeedInterlaceUpdate = false;
 bool bNeedRGB24Update = false;
-bool bChangeWinMode = false;
 
 static uint32_t ulStatusControl[256];
 
@@ -50,7 +43,6 @@ static uint32_t ulStatusControl[256];
 
 static int GPUdataRet;
 int lGPUstatusRet;
-char szDispBuf[64];
 
 uint32_t dwGPUVersion = 0;
 int iGPUHeight = 512;
@@ -70,7 +62,6 @@ int iDataReadMode;
 
 int lClearOnSwap;
 int lClearOnSwapColor;
-int iWinSize;
 
 // possible psx display widths
 static int16_t dispWidths[8] = {256, 320, 512, 640, 368, 384, 512, 640};
@@ -81,50 +72,19 @@ TWin_t TWin;
 int16_t imageX0, imageX1;
 int16_t imageY0, imageY1;
 bool bDisplayNotSet = true;
-GLuint uiScanLine = 0;
-float iScanlineColor[] = {0, 0, 0, 0.3f}; 
-int lSelectedSlot = 0;
+static int lSelectedSlot = 0;
 static uint8_t *pGfxCardScreen = 0;
-int iRenderFVR = 0;
-int iNoScreenSaver = 0;
+static int iRenderFVR = 0;
 uint32_t ulGPUInfoVals[16];
 static int iFakePrimBusy = 0;
-uint32_t vBlank = 0;
+static uint32_t vBlank = 0;
 static bool oddLines;
-
-////////////////////////////////////////////////////////////////////////
-// stuff to make this a true PDK module
-////////////////////////////////////////////////////////////////////////
-
-extern "C" const char *CALLBACK PSEgetLibName(void)
-{
-	return "uyjulianPSXOGL";
-}
-
-extern "C" uint32_t CALLBACK PSEgetLibType(void)
-{
-	return PSE_LT_GPU;
-}
-
-extern "C" uint32_t CALLBACK PSEgetLibVersion(void)
-{
-	return version << 16 | revision << 8 | build;
-}
-
-extern "C" const char *CALLBACK GPUgetLibInfos(void)
-{
-	return "Based on Peops XGL by Pete Bernert";
-}
-
-extern "C" void CALLBACK GPUmakeSnapshot(void)
-{
-}
 
 ////////////////////////////////////////////////////////////////////////
 // GPU INIT... here starts it all (first func called by emu)
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" int32_t CALLBACK GPUinit()
+int32_t LoadPSE()
 {
 	memset(ulStatusControl, 0, 256 * sizeof(uint32_t));
 
@@ -240,9 +200,8 @@ static void sysdep_create_display(void) // create display
 
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" int32_t CALLBACK GPUopen(uint32_t *, char *, char *)
+int32_t OpenPSE()
 {
-	ReadConfig();
 	sysdep_create_display();
 	InitializeTextureStore();
 	rRatioRect.left = rRatioRect.top = 0;
@@ -254,7 +213,7 @@ extern "C" int32_t CALLBACK GPUopen(uint32_t *, char *, char *)
 	return -1;
 }
 
-extern "C" int32_t CALLBACK GPUclose() 
+int32_t ClosePSE() 
 {
 	GLcleanup(); 
 
@@ -265,69 +224,12 @@ extern "C" int32_t CALLBACK GPUclose()
 	return 0;
 }
 
-extern "C" int32_t CALLBACK GPUshutdown()
+int32_t ShutdownPSE()
 {
 	if (psxVSecure)
 		free(psxVSecure);
 	psxVSecure = 0;
 	return 0;
-}
-
-
-static void PaintBlackBorders(void)
-{
-	int16_t s;
-
-	if (bTexEnabled)
-	{
-		glDisable(GL_TEXTURE_2D);
-		bTexEnabled = false;
-	}
-	if (bOldSmoothShaded)
-	{
-		glShadeModel(GL_FLAT);
-		bOldSmoothShaded = false;
-	}
-	if (bBlendEnable)
-	{
-		glDisable(GL_BLEND);
-		bBlendEnable = false;
-	}
-	glDisable(GL_ALPHA_TEST);
-
-	glBegin(GL_QUADS);
-
-	vertex[0].c.lcol = 0xff000000;
-	SETCOL(vertex[0]);
-
-	if (PreviousPSXDisplay.Range.x0)
-	{
-		s = PreviousPSXDisplay.Range.x0 + 1;
-		glVertex3f(0, 0, 0.99996f);
-		glVertex3f(0, PSXDisplay.DisplayMode.y, 0.99996f);
-		glVertex3f(s, PSXDisplay.DisplayMode.y, 0.99996f);
-		glVertex3f(s, 0, 0.99996f);
-
-		s += PreviousPSXDisplay.Range.x1 - 2;
-
-		glVertex3f(s, 0, 0.99996f);
-		glVertex3f(s, PSXDisplay.DisplayMode.y, 0.99996f);
-		glVertex3f(PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0.99996f);
-		glVertex3f(PSXDisplay.DisplayMode.x, 0, 0.99996f);
-	}
-
-	if (PreviousPSXDisplay.Range.y0)
-	{
-		s = PreviousPSXDisplay.Range.y0 + 1;
-		glVertex3f(0, 0, 0.99996f);
-		glVertex3f(0, s, 0.99996f);
-		glVertex3f(PSXDisplay.DisplayMode.x, s, 0.99996f);
-		glVertex3f(PSXDisplay.DisplayMode.x, 0, 0.99996f);
-	}
-
-	glEnd();
-
-	glEnable(GL_ALPHA_TEST);
 }
 
 int iLastRGB24 = 0; 
@@ -368,16 +270,10 @@ void updateDisplay(void) // UPDATE DISPLAY
 		UploadScreen(true);
 	}
 
-	if (PreviousPSXDisplay.Range.x0 || // paint black borders around display area, if needed
-	    PreviousPSXDisplay.Range.y0)
-		PaintBlackBorders();
-
 	if (PSXDisplay.Disabled) // display disabled?
 	{
 		// moved here
-		glClearColor(0, 0, 0, 128); // -> clear whole backbuffer
-		glClear(uiBufferBits);
-		glfwSwapBuffers(glfwwindow); //show black screen
+		clearToBlack();
 		gl_z = 0.0f;
 		bDisplayNotSet = true;
 	}
@@ -400,17 +296,9 @@ void updateDisplay(void) // UPDATE DISPLAY
 
 	if (lClearOnSwap) // clear buffer after swap?
 	{
-		GLclampf g, b, r;
-
 		if (bDisplayNotSet) // -> set new vals
 			SetOGLDisplaySettings(1);
-
-		g = ((GLclampf)GREEN(lClearOnSwapColor)) / 255.0f; // -> get col
-		b = ((GLclampf)BLUE(lClearOnSwapColor)) / 255.0f;
-		r = ((GLclampf)RED(lClearOnSwapColor)) / 255.0f;
-
-		glClearColor(r, g, b, 128); // -> clear
-		glClear(uiBufferBits);
+		clearWithColor(lClearOnSwapColor);
 		lClearOnSwap = 0; // -> done
 	}
 
@@ -444,9 +332,6 @@ void updateDisplay(void) // UPDATE DISPLAY
 
 void updateFrontDisplay(void)
 {
-	if (PreviousPSXDisplay.Range.x0 || PreviousPSXDisplay.Range.y0)
-		PaintBlackBorders();
-
 	bFakeFrontBuffer = false;
 	bRenderFrontBuffer = false;
 
@@ -581,17 +466,14 @@ static void updateDisplayIfChanged(void)
 		updateDisplay(); // yeah, real update (swap buffer)
 }
 
-extern "C" void CALLBACK GPUcursor(int , int , int ) {}
-
 static uint16_t usFirstPos = 2;
 
-extern "C" void CALLBACK GPUupdateLace(void)
+void UpdateLacePSE()
 {
-	STATUSREG ^= 0x80000000; // interlaced bit toggle, if the CC game fix is not active (see gpuReadStatus)
+	STATUSREG ^= GPUSTATUS_ODDLINES; // interlaced bit toggle, if the CC game fix is not active (see gpuReadStatus)
 
 	if (PSXDisplay.Interlaced) // interlaced mode?
 	{
-		// STATUSREG^=0x80000000;
 		if (PSXDisplay.DisplayMode.x > 0 && PSXDisplay.DisplayMode.y > 0)
 		{
 			updateDisplay(); // -> swap buffers (new frame)
@@ -611,15 +493,15 @@ extern "C" void CALLBACK GPUupdateLace(void)
 // process read request from GPU status register
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" uint32_t CALLBACK GPUreadStatus(void)
+uint32_t ReadStatusPSE()
 {
 	if (vBlank || oddLines == false)
 	{ // vblank or even lines
-		STATUSREG &= ~(0x80000000);
+		STATUSREG &= ~(GPUSTATUS_ODDLINES);
 	}
 	else
 	{ // Oddlines and not vblank
-		STATUSREG |= 0x80000000;
+		STATUSREG |= GPUSTATUS_ODDLINES;
 	}
 
 	if (iFakePrimBusy) // 27.10.2007 - emulating some 'busy' while drawing... pfff... not perfect, but since our
@@ -647,7 +529,7 @@ extern "C" uint32_t CALLBACK GPUreadStatus(void)
 // these are always single packet commands.
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUwriteStatus(uint32_t gdata)
+void WriteStatusPSE(uint32_t gdata)
 {
 	uint32_t lCommand = (gdata >> 24) & 0xff;
 
@@ -665,10 +547,6 @@ extern "C" void CALLBACK GPUwriteStatus(uint32_t gdata)
 		PSXDisplay.DrawOffset.x = PSXDisplay.DrawOffset.y = 0;
 		drawX = drawY = 0;
 		drawW = drawH = 0;
-		sSetMask = 0;
-		lSetMask = 0;
-		bCheckMask = false;
-		iSetMask = 0;
 		usMirror = 0;
 		GlobalTextAddrX = 0;
 		GlobalTextAddrY = 0;
@@ -1277,7 +1155,7 @@ void CheckVRamRead(int x, int y, int dx, int dy, bool bFront)
 // core read from vram
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUreadDataMem(uint32_t *pMem, int iSize)
+void ReadDataMemPSE(uint32_t *pMem, int iSize)
 {
 	int i;
 
@@ -1359,10 +1237,10 @@ ENDREAD:
 	GPUIsIdle;
 }
 
-extern "C" uint32_t CALLBACK GPUreadData(void)
+uint32_t ReadDataPSE()
 {
 	uint32_t l;
-	GPUreadDataMem(&l, 1);
+	ReadDataMemPSE(&l, 1);
 	return GPUdataRet;
 }
 
@@ -1442,7 +1320,7 @@ static const uint8_t primTableCX[256] = {
 // processes data send to GPU data register
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUwriteDataMem(uint32_t *pMem, int iSize)
+void WriteDataMemPSE(uint32_t *pMem, int iSize)
 {
 	uint8_t command;
 	uint32_t gdata = 0;
@@ -1580,20 +1458,9 @@ ENDVRAM:
 
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUwriteData(uint32_t gdata)
+void WriteDataPSE(uint32_t gdata)
 {
-	GPUwriteDataMem(&gdata, 1);
-}
-
-extern "C" int32_t CALLBACK GPUconfigure(void)
-{
-	return 0;
-}
-
-void SetFixes(void)
-{
-
-	dispWidths[4] = 368;
+	WriteDataMemPSE(&gdata, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1621,7 +1488,7 @@ static __inline bool CheckForEndlessLoop(uint32_t laddr)
 // core gives a dma chain to gpu: same as the gpuwrite interface funcs
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" int32_t CALLBACK GPUdmaChain(uint32_t *baseAddrL, uint32_t addr)
+int32_t DmaChainPSE(uint32_t *baseAddrL, uint32_t addr)
 {
 	uint32_t dmaMem;
 	uint8_t *baseAddrB;
@@ -1649,7 +1516,7 @@ extern "C" int32_t CALLBACK GPUdmaChain(uint32_t *baseAddrL, uint32_t addr)
 		dmaMem = addr + 4;
 
 		if (count > 0)
-			GPUwriteDataMem(&baseAddrL[dmaMem >> 2], count);
+			WriteDataMemPSE(&baseAddrL[dmaMem >> 2], count);
 
 		addr = baseAddrL[addr >> 2] & 0xffffff;
 	} while (addr != 0xffffff);
@@ -1659,26 +1526,10 @@ extern "C" int32_t CALLBACK GPUdmaChain(uint32_t *baseAddrL, uint32_t addr)
 	return 0;
 }
 
-extern "C" void CALLBACK GPUabout(void)
-{
-}
-
-extern "C" int32_t CALLBACK GPUtest(void)
-{
-	return 0;
-}
-
-typedef struct GPUFREEZETAG
-{
-	uint32_t ulFreezeVersion;         // should be always 1 for now (set by main emu)
-	uint32_t ulStatus;                // current gpu status
-	uint32_t ulControl[256];          // latest control register values
-	uint8_t psxVRam[1024 * 1024 * 2]; // current VRam image (full 2 MB for ZN)
-} GPUFreeze_t;
 
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" int32_t CALLBACK GPUfreeze(uint32_t ulGetFreezeData, GPUFreeze_t *pF)
+int32_t FreezePSE(uint32_t ulGetFreezeData, GPUFreeze_t *pF)
 {
 	if (ulGetFreezeData == 2)
 	{
@@ -1714,15 +1565,15 @@ extern "C" int32_t CALLBACK GPUfreeze(uint32_t ulGetFreezeData, GPUFreeze_t *pF)
 
 	ResetTextureArea(true);
 
-	GPUwriteStatus(ulStatusControl[0]);
-	GPUwriteStatus(ulStatusControl[1]);
-	GPUwriteStatus(ulStatusControl[2]);
-	GPUwriteStatus(ulStatusControl[3]);
-	GPUwriteStatus(ulStatusControl[8]);
-	GPUwriteStatus(ulStatusControl[6]);
-	GPUwriteStatus(ulStatusControl[7]);
-	GPUwriteStatus(ulStatusControl[5]);
-	GPUwriteStatus(ulStatusControl[4]);
+	WriteStatusPSE(ulStatusControl[0]);
+	WriteStatusPSE(ulStatusControl[1]);
+	WriteStatusPSE(ulStatusControl[2]);
+	WriteStatusPSE(ulStatusControl[3]);
+	WriteStatusPSE(ulStatusControl[8]);
+	WriteStatusPSE(ulStatusControl[6]);
+	WriteStatusPSE(ulStatusControl[7]);
+	WriteStatusPSE(ulStatusControl[5]);
+	WriteStatusPSE(ulStatusControl[4]);
 
 	return 1;
 }
@@ -1847,7 +1698,7 @@ static void PaintPicDot(uint8_t *p, uint8_t c)
 
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUgetScreenPic(uint8_t *pMem)
+void GetScreenPicPSE(uint8_t *pMem)
 {
 	float XS, YS;
 	int x, y, v;
@@ -1935,36 +1786,18 @@ extern "C" void CALLBACK GPUgetScreenPic(uint8_t *pMem)
 
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUshowScreenPic(uint8_t *)
-{
-
-}
-
-////////////////////////////////////////////////////////////////////////
-
-extern "C" void CALLBACK GPUsetfix(uint32_t dwFixBits)
-{
-}
-
-////////////////////////////////////////////////////////////////////////
-
-extern "C" void CALLBACK GPUvisualVibration(uint32_t , uint32_t )
-{
-
-}
-
 ////////////////////////////////////////////////////////////////////////
 // main emu can set display infos (A/M/G/D)
 ////////////////////////////////////////////////////////////////////////
 
-extern "C" void CALLBACK GPUvBlank(int val)
+void VBlankPSE(int val)
 {
 	vBlank = val;
 	oddLines = oddLines ? false : true; // bit changes per frame when not interlaced
 	// printf("VB %x (%x)\n", oddLines, vBlank);
 }
 
-extern "C" void CALLBACK GPUhSync(int val)
+void HSyncPSE(int val)
 {
 	// Interlaced mode - update bit every scanline
 	if (PSXDisplay.Interlaced)
