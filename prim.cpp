@@ -781,55 +781,53 @@ static uint16_t BGR24to16(uint32_t BGR)
 static __inline void PRIMdrawTexturedQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
                                           OGLVertex *vertex4)
 {
-	glBegin(GL_TRIANGLE_STRIP);
-	glTexCoord2fv(&vertex1->sow);
-	glVertex3fv(&vertex1->x);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex4;
+	vertexToDraw[3] = *vertex3;
 
-	glTexCoord2fv(&vertex2->sow);
-	glVertex3fv(&vertex2->x);
-
-	glTexCoord2fv(&vertex4->sow);
-	glVertex3fv(&vertex4->x);
-
-	glTexCoord2fv(&vertex3->sow);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTexturedTri(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glBegin(GL_TRIANGLES);
-	glTexCoord2fv(&vertex1->sow);
-	glVertex3fv(&vertex1->x);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[3];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
 
-	glTexCoord2fv(&vertex2->sow);
-	glVertex3fv(&vertex2->x);
-
-	glTexCoord2fv(&vertex3->sow);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTexGouraudTriColor(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glBegin(GL_TRIANGLES);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[3];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
 
-	glColor4ubv(vertex1->c.col);
-	glTexCoord2fv(&vertex1->sow);
-	glVertex3fv(&vertex1->x);
-
-	glColor4ubv(vertex2->c.col);
-	glTexCoord2fv(&vertex2->sow);
-	glVertex3fv(&vertex2->x);
-
-	glColor4ubv(vertex3->c.col);
-	glTexCoord2fv(&vertex3->sow);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 /////////////////////////////////////////////////////////
@@ -837,63 +835,69 @@ static __inline void PRIMdrawTexGouraudTriColor(OGLVertex *vertex1, OGLVertex *v
 static __inline void PRIMdrawTexGouraudTriColorQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
                                                     OGLVertex *vertex4)
 {
-	glBegin(GL_TRIANGLE_STRIP);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex4;
+	vertexToDraw[3] = *vertex3;
 
-	glColor4ubv(vertex1->c.col);
-	glTexCoord2fv(&vertex1->sow);
-	glVertex3fv(&vertex1->x);
-
-	glColor4ubv(vertex2->c.col);
-	glTexCoord2fv(&vertex2->sow);
-	glVertex3fv(&vertex2->x);
-
-	glColor4ubv(vertex4->c.col);
-	glTexCoord2fv(&vertex4->sow);
-	glVertex3fv(&vertex4->x);
-
-	glColor4ubv(vertex3->c.col);
-	glTexCoord2fv(&vertex3->sow);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTri(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glBegin(GL_TRIANGLES);
-	glVertex3fv(&vertex1->x);
-	glVertex3fv(&vertex2->x);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[3];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
+
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTri2(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glBegin(GL_TRIANGLE_STRIP);
-	glVertex3fv(&vertex1->x);
-	glVertex3fv(&vertex3->x);
-	glVertex3fv(&vertex2->x);
-	glVertex3fv(&vertex4->x);
-	glEnd();
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex3;
+	vertexToDraw[2] = *vertex2;
+	vertexToDraw[3] = *vertex4;
+
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawGouraudTriColor(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glBegin(GL_TRIANGLES);
-	glColor4ubv(vertex1->c.col);
-	glVertex3fv(&vertex1->x);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[3];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
 
-	glColor4ubv(vertex2->c.col);
-	glVertex3fv(&vertex2->x);
-
-	glColor4ubv(vertex3->c.col);
-	glVertex3fv(&vertex3->x);
-	glEnd();
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 /////////////////////////////////////////////////////////
@@ -901,65 +905,71 @@ static __inline void PRIMdrawGouraudTriColor(OGLVertex *vertex1, OGLVertex *vert
 static __inline void PRIMdrawGouraudTri2Color(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
                                               OGLVertex *vertex4)
 {
-	glBegin(GL_TRIANGLE_STRIP);
-	glColor4ubv(vertex1->c.col);
-	glVertex3fv(&vertex1->x);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex3;
+	vertexToDraw[2] = *vertex2;
+	vertexToDraw[3] = *vertex4;
 
-	glColor4ubv(vertex3->c.col);
-	glVertex3fv(&vertex3->x);
-
-	glColor4ubv(vertex2->c.col);
-	glVertex3fv(&vertex2->x);
-
-	glColor4ubv(vertex4->c.col);
-	glVertex3fv(&vertex4->x);
-	glEnd();
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawFlatLine(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glBegin(GL_QUADS);
-	glColor4ubv(vertex1->c.col);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
+	vertexToDraw[3] = *vertex4;
 
-	glVertex3fv(&vertex1->x);
-	glVertex3fv(&vertex2->x);
-	glVertex3fv(&vertex3->x);
-	glVertex3fv(&vertex4->x);
-	glEnd();
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColor4ubv(vertex1->c.col);
+	glDrawArrays(GL_QUADS, 0, 3);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawGouraudLine(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glBegin(GL_QUADS);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
+	vertexToDraw[3] = *vertex4;
 
-	glColor4ubv(vertex1->c.col);
-	glVertex3fv(&vertex1->x);
-
-	glColor4ubv(vertex2->c.col);
-	glVertex3fv(&vertex2->x);
-
-	glColor4ubv(vertex3->c.col);
-	glVertex3fv(&vertex3->x);
-
-	glColor4ubv(vertex4->c.col);
-	glVertex3fv(&vertex4->x);
-	glEnd();
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
 /////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glBegin(GL_QUADS);
-	glVertex3fv(&vertex1->x);
-	glVertex3fv(&vertex2->x);
-	glVertex3fv(&vertex3->x);
-	glVertex3fv(&vertex4->x);
-	glEnd();
+	glDisableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGLVertex vertexToDraw[4];
+	vertexToDraw[0] = *vertex1;
+	vertexToDraw[1] = *vertex2;
+	vertexToDraw[2] = *vertex3;
+	vertexToDraw[3] = *vertex4;
+
+	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
 ////////////////////////////////////////////////////////////////////////
