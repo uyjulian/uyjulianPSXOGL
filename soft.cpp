@@ -50,10 +50,6 @@ static int iDither = 0;
 #define X32ACOL2(x) ((x >> 5) & 0x001e001e)
 #define X32ACOL3(x) ((x >> 10) & 0x001e001e)
 
-#define X32BCOL1(x) (x & 0x001c001c)
-#define X32BCOL2(x) ((x >> 5) & 0x001c001c)
-#define X32BCOL3(x) ((x >> 10) & 0x001c001c)
-
 #define X32PSXCOL(r, g, b) ((g << 10) | (b << 5) | r)
 
 #define XPSXCOL(r, g, b) ((g & 0x7c00) | (b & 0x3e0) | (r & 0x1f))
@@ -69,116 +65,13 @@ static int16_t Ymax;
 
 int16_t ly0, lx0, ly1, lx1, ly2, lx2, ly3, lx3; // global psx vertex coords
 int GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
-int GlobalTextREST, GlobalTextABR, GlobalTextPAGE;
-
-////////////////////////////////////////////////////////////////////////
-// POLYGON OFFSET FUNCS
-////////////////////////////////////////////////////////////////////////
-
-void offsetPSXLine(void)
-{
-	int16_t x0, x1, y0, y1, dx, dy;
-	float px, py;
-
-	x0 = lx0 + 1 + PSXDisplay.DrawOffset.x;
-	x1 = lx1 + 1 + PSXDisplay.DrawOffset.x;
-	y0 = ly0 + 1 + PSXDisplay.DrawOffset.y;
-	y1 = ly1 + 1 + PSXDisplay.DrawOffset.y;
-
-	dx = x1 - x0;
-	dy = y1 - y0;
-
-	// tricky line width without sqrt
-
-	if (dx >= 0)
-	{
-		if (dy >= 0)
-		{
-			px = 0.5f;
-			if (dx > dy)
-				py = -0.5f;
-			else if (dx < dy)
-				py = 0.5f;
-			else
-				py = 0.0f;
-		}
-		else
-		{
-			py = -0.5f;
-			dy = -dy;
-			if (dx > dy)
-				px = 0.5f;
-			else if (dx < dy)
-				px = -0.5f;
-			else
-				px = 0.0f;
-		}
-	}
-	else
-	{
-		if (dy >= 0)
-		{
-			py = 0.5f;
-			dx = -dx;
-			if (dx > dy)
-				px = -0.5f;
-			else if (dx < dy)
-				px = 0.5f;
-			else
-				px = 0.0f;
-		}
-		else
-		{
-			px = -0.5f;
-			if (dx > dy)
-				py = -0.5f;
-			else if (dx < dy)
-				py = 0.5f;
-			else
-				py = 0.0f;
-		}
-	}
-
-	lx0 = (int16_t)((float)x0 - px);
-	lx3 = (int16_t)((float)x0 + py);
-
-	ly0 = (int16_t)((float)y0 - py);
-	ly3 = (int16_t)((float)y0 - px);
-
-	lx1 = (int16_t)((float)x1 - py);
-	lx2 = (int16_t)((float)x1 + px);
-
-	ly1 = (int16_t)((float)y1 + px);
-	ly2 = (int16_t)((float)y1 + py);
-}
-
-void offsetPSX3(void)
-{
-	lx0 += PSXDisplay.DrawOffset.x;
-	ly0 += PSXDisplay.DrawOffset.y;
-	lx1 += PSXDisplay.DrawOffset.x;
-	ly1 += PSXDisplay.DrawOffset.y;
-	lx2 += PSXDisplay.DrawOffset.x;
-	ly2 += PSXDisplay.DrawOffset.y;
-}
-
-void offsetPSX4(void)
-{
-	lx0 += PSXDisplay.DrawOffset.x;
-	ly0 += PSXDisplay.DrawOffset.y;
-	lx1 += PSXDisplay.DrawOffset.x;
-	ly1 += PSXDisplay.DrawOffset.y;
-	lx2 += PSXDisplay.DrawOffset.x;
-	ly2 += PSXDisplay.DrawOffset.y;
-	lx3 += PSXDisplay.DrawOffset.x;
-	ly3 += PSXDisplay.DrawOffset.y;
-}
+int GlobalTextREST, GlobalTextABR;
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 // PER PIXEL FUNCS
-////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
@@ -1618,21 +1511,6 @@ static __inline bool SetupSections_FT(int16_t x1, int16_t y1, int16_t x2, int16_
 	delta_right_u = shl10idiv(temp * ((v3->u - v1->u) >> 10) + ((v1->u - v2->u) << 6), longest);
 	delta_right_v = shl10idiv(temp * ((v3->v - v1->v) >> 10) + ((v1->v - v2->v) << 6), longest);
 
-	/*
-	Mmm... adjust neg tex deltas... will sometimes cause slight
-	texture distortions
-
-	 longest>>=16;
-	 if(longest)
-	  {
-	   if(longest<0) longest=-longest;
-	   if(delta_right_u<0)
-	    delta_right_u-=delta_right_u/longest;
-	   if(delta_right_v<0)
-	    delta_right_v-=delta_right_v/longest;
-	  }
-	*/
-
 	return true;
 }
 
@@ -2831,8 +2709,8 @@ void drawPoly4F(int rgb)
 // POLY 3/4 F-SHADED TEX PAL 4
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                   int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                          int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -2874,7 +2752,7 @@ static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -2923,8 +2801,8 @@ static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                      int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                             int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
 	int difX, difY, difX2, difY2;
@@ -2966,7 +2844,7 @@ static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -3029,8 +2907,8 @@ static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                      int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                             int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -3073,7 +2951,7 @@ static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -3124,9 +3002,9 @@ static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 // more exact:
 
-static void drawPoly4TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                   int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                   int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                          int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                          int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -3218,9 +3096,9 @@ static void drawPoly4TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                      int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                      int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                             int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
@@ -3325,9 +3203,9 @@ static void drawPoly4TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                      int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                      int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                             int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -3361,7 +3239,6 @@ static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 	YAdjust = ((GlobalTextAddrY) << 11) + (GlobalTextAddrX << 1);
 	YAdjust += (TWin.Position.y0 << 11) + (TWin.Position.x0 >> 1);
-
 
 	for (i = ymin; i <= ymax; i++)
 	{
@@ -3421,9 +3298,9 @@ static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                        int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                        int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                               int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                               int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -3517,8 +3394,8 @@ static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 // POLY 3 F-SHADED TEX PAL 8
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                   int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                          int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -3601,8 +3478,8 @@ static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                      int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                             int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
 	int difX, difY, difX2, difY2;
@@ -3703,8 +3580,8 @@ static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                      int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
+static void drawPoly3TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                             int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -3791,9 +3668,9 @@ static void drawPoly3TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 // more exact:
 
-static void drawPoly4TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                   int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                   int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                          int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                          int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -3878,9 +3755,9 @@ static void drawPoly4TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                      int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                      int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                             int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
@@ -3981,9 +3858,9 @@ static void drawPoly4TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                      int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                      int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                             int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -4071,9 +3948,9 @@ static void drawPoly4TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                        int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                        int16_t ty4, int16_t clX, int16_t clY)
+static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                               int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                               int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -4163,8 +4040,8 @@ static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 // POLY 3 F-SHADED TEX 15 BIT
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                 int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
+static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                        int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -4242,8 +4119,8 @@ static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                    int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
+static void drawPoly3TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                           int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int difX, difY, difX2, difY2;
@@ -4328,7 +4205,8 @@ static void drawPoly3TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 // more exact:
 
 static void drawPoly4TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                 int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4, int16_t ty4)
+                        int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
+                        int16_t ty4)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -4409,9 +4287,9 @@ static void drawPoly4TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                    int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                    int16_t ty4)
+static void drawPoly4TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                           int16_t tx4, int16_t ty4)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -4496,9 +4374,9 @@ static void drawPoly4TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TD_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                      int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                      int16_t ty4)
+static void drawPoly4TD_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                             int16_t tx4, int16_t ty4)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -4590,7 +4468,7 @@ static __inline void drawPoly3Gi(int16_t x1, int16_t y1, int16_t x2, int16_t y2,
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
+	int difR, difB, difG;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -4617,9 +4495,6 @@ static __inline void drawPoly3Gi(int16_t x1, int16_t y1, int16_t x2, int16_t y2,
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
 
 	if (iDither == 2)
 		for (i = ymin; i <= ymax; i++)
@@ -4713,14 +4588,14 @@ void drawPoly4G(int rgb1, int rgb2, int rgb3, int rgb4)
 // POLY 3/4 G-SHADED TEX PAL4
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                    int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                    int col3)
+static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                           int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                           int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
@@ -4753,14 +4628,10 @@ static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
 
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
@@ -4815,14 +4686,14 @@ static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                       int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                       int col3)
+static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                              int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
@@ -4855,14 +4726,10 @@ static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
 
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
@@ -4922,14 +4789,14 @@ static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                       int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                       int col3)
+static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                              int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
@@ -4963,14 +4830,10 @@ static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
 
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
@@ -5031,8 +4894,9 @@ static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 // happen...
 
 static void drawPoly4TGEx4_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
-                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3, int col4)
+                                  int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3,
+                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2,
+                                  int col3, int col4)
 {
 	drawPoly3TGEx4_IL(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx4_IL(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
@@ -5040,9 +4904,9 @@ static void drawPoly4TGEx4_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                    int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                    int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
+static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -5095,17 +4959,12 @@ static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			difX = (right_u - posX) / num;
 			difY = (right_v - posY) / num;
 
-
-
 			cR1 = left_R;
 			cG1 = left_G;
 			cB1 = left_B;
 			difR = (right_R - cR1) / num;
 			difG = (right_G - cG1) / num;
 			difB = (right_B - cB1) / num;
-
-
-
 
 			if (xmin < drawX)
 			{
@@ -5146,9 +5005,10 @@ static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                       int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                       int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3, int col4)
+static void drawPoly4TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3,
+                              int col4)
 {
 	drawPoly3TGEx4_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 
@@ -5159,14 +5019,14 @@ static void drawPoly4TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 // POLY 3/4 G-SHADED TEX PAL8
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                    int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                    int col3)
+static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                           int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                           int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
@@ -5199,18 +5059,15 @@ static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
+
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -5258,14 +5115,14 @@ static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                       int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                       int col3)
+static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                              int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
@@ -5298,18 +5155,15 @@ static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
+
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -5363,14 +5217,14 @@ static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                       int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY, int col1, int col2,
-                       int col3)
+static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
+                              int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
@@ -5404,18 +5258,15 @@ static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
+
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -5466,16 +5317,17 @@ static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 // note: two g-shaded tris: small texture distortions can happen
 
 static void drawPoly4TGEx8_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
-                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3, int col4)
+                                  int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3,
+                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2,
+                                  int col3, int col4)
 {
 	drawPoly3TGEx8_IL(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx8_IL(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
 }
 
-static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                    int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                    int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
+static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -5528,17 +5380,12 @@ static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			difX = (right_u - posX) / num;
 			difY = (right_v - posY) / num;
 
-
-
 			cR1 = left_R;
 			cG1 = left_G;
 			cB1 = left_B;
 			difR = (right_R - cR1) / num;
 			difG = (right_G - cG1) / num;
 			difB = (right_B - cB1) / num;
-
-
-
 
 			if (xmin < drawX)
 			{
@@ -5577,9 +5424,10 @@ static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                       int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                       int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3, int col4)
+static void drawPoly4TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3,
+                              int col4)
 {
 	drawPoly3TGEx8_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx8_TW(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
@@ -5589,13 +5437,13 @@ static void drawPoly4TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 // POLY 3 G-SHADED TEX 15 BIT
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                  int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2, int col3)
+static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                         int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2, int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -5623,18 +5471,15 @@ static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
+
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -5685,13 +5530,14 @@ static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1, int16_t ty1,
-                     int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2, int col3)
+static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
+                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2,
+                            int col3)
 {
 	int i, j, xmin, xmax, ymin, ymax;
 	int cR1, cG1, cB1;
-	int difR, difB, difG, difR2, difB2, difG2;
-	int difX, difY, difX2, difY2;
+	int difR, difB, difG;
+	int difX, difY;
 	int posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -5719,18 +5565,15 @@ static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int1
 	difR = delta_right_R;
 	difG = delta_right_G;
 	difB = delta_right_B;
-	difR2 = difR << 1;
-	difG2 = difG << 1;
-	difB2 = difB << 1;
+
 	difX = delta_right_u;
-	difX2 = difX << 1;
+
 	difY = delta_right_v;
-	difY2 = difY << 1;
 
 	for (i = ymin; i <= ymax; i++)
 	{
 		xmin = (left_x >> 16);
-		xmax = (right_x >> 16) - 1; //!!!!!!!!!!!!!!!!!!
+		xmax = (right_x >> 16);
 		if (drawW < xmax)
 			xmax = drawW;
 
@@ -5786,8 +5629,8 @@ static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int1
 // note: two g-shaded tris: small texture distortions can happen
 
 static void drawPoly4TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                  int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                  int16_t ty4, int col1, int col2, int col4, int col3)
+                         int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
+                         int16_t ty4, int col1, int col2, int col4, int col3)
 {
 	int num;
 	int i, j, xmin, xmax, ymin, ymax;
@@ -5835,17 +5678,12 @@ static void drawPoly4TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 			difX = (right_u - posX) / num;
 			difY = (right_v - posY) / num;
 
-
-
 			cR1 = left_R;
 			cG1 = left_G;
 			cB1 = left_B;
 			difR = (right_R - cR1) / num;
 			difG = (right_G - cG1) / num;
 			difB = (right_B - cB1) / num;
-
-
-
 
 			if (xmin < drawX)
 			{
@@ -5880,9 +5718,9 @@ static void drawPoly4TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 
 ////////////////////////////////////////////////////////////////////////
 
-static void drawPoly4TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
-                     int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                     int16_t ty4, int col1, int col2, int col3, int col4)
+static void drawPoly4TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
+                            int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
+                            int16_t tx4, int16_t ty4, int col1, int col2, int col3, int col4)
 {
 	drawPoly3TGD_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, col2, col4, col3);
 	drawPoly3TGD_TW(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, col1, col2, col3);

@@ -58,8 +58,6 @@
 
 #include "externals.h"
 
-
-
 ////////////////////////////////////////////////////////////////////////
 // texture conversion buffer ..
 ////////////////////////////////////////////////////////////////////////
@@ -73,7 +71,6 @@ static uint32_t dwTexPageComp = 0;
 static int iClampType = GL_CLAMP_TO_EDGE;
 
 void (*LoadSubTexFn)(int, int, int16_t, int16_t);
-uint32_t (*PalTexturedColourFn)(uint32_t);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -87,8 +84,8 @@ void DefineSubTextureSort(void);
 ////////////////////////////////////////////////////////////////////////
 
 static GLint giWantedRGBA = 4;
-static GLint giWantedFMT = GL_RGBA;
-static GLint giWantedTYPE = GL_UNSIGNED_BYTE;
+static GLenum giWantedFMT = GL_RGBA;
+static GLenum giWantedTYPE = GL_UNSIGNED_BYTE;
 int GlobalTexturePage;
 static GLint XTexS;
 static GLint YTexS;
@@ -130,7 +127,6 @@ typedef struct textureSubCacheEntryTagS
 } textureSubCacheEntryS;
 
 //---------------------------------------------
-
 
 //---------------------------------------------
 
@@ -203,7 +199,6 @@ void CheckTextureMemory(void)
 	int iTSize;
 	char *p;
 
-
 	iTSize = 256;
 	p = (char *)malloc(iTSize * iTSize * 4);
 
@@ -222,7 +217,7 @@ void CheckTextureMemory(void)
 
 	free(p);
 
-	bDetail = (GLboolean*) malloc(MAXSORTTEX * sizeof(GLboolean));
+	bDetail = (GLboolean *)malloc(MAXSORTTEX * sizeof(GLboolean));
 	memset(bDetail, 0, MAXSORTTEX * sizeof(GLboolean));
 	b = glAreTexturesResident(MAXSORTTEX, uiStexturePage, bDetail);
 
@@ -1311,7 +1306,6 @@ static void DefineTextureMovie(void)
 // movie texture: load
 ////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////
 
 static GLuint LoadTextureMovieFast(void)
@@ -1527,11 +1521,11 @@ static GLuint Fake15BitTexture(void)
 	y1 += PreviousPSXDisplay.Range.y0;
 
 	if (PSXDisplay.DisplayMode.x)
-		ScaleX = (float)rRatioRect.right / (float)PSXDisplay.DisplayMode.x;
+		ScaleX = (float)iResX / (float)PSXDisplay.DisplayMode.x;
 	else
 		ScaleX = 1.0f;
 	if (PSXDisplay.DisplayMode.y)
-		ScaleY = (float)rRatioRect.bottom / (float)PSXDisplay.DisplayMode.y;
+		ScaleY = (float)iResY / (float)PSXDisplay.DisplayMode.y;
 	else
 		ScaleY = 1.0f;
 
@@ -1614,8 +1608,7 @@ static GLuint Fake15BitTexture(void)
 	if (bFakeFrontBuffer)
 		glReadBuffer(GL_FRONT);
 
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, iYAdjust, rSrc.left + rRatioRect.left,
-	                    iResY - rSrc.bottom - rRatioRect.top, x1, y1);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, iYAdjust, rSrc.left + 0, iResY - rSrc.bottom - 0, x1, y1);
 
 	if (glGetError())
 	{
@@ -1951,8 +1944,6 @@ void LoadSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy)
 	DYTexS = dy;
 
 	DefineSubTextureSort();
-
-
 }
 
 /////////////////////////////////////////////////////////////////////////////

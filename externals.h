@@ -5,9 +5,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+//#define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <math.h> 
+#include <math.h>
 
 #define __inline inline
 
@@ -18,8 +18,8 @@
 #define CLUTCHK 0x00060000
 #define CLUTSHIFT 17
 
-#define SHADETEXBIT(x) ((x>>24) & 0x1)
-#define SEMITRANSBIT(x) ((x>>25) & 0x1)
+#define SHADETEXBIT(x) ((x >> 24) & 0x1)
+#define SEMITRANSBIT(x) ((x >> 25) & 0x1)
 
 #define MAXTPAGES_MAX 64
 #define MAXSORTTEX_MAX 196
@@ -82,17 +82,16 @@
 
 #define STATUSREG lGPUstatusRet
 
-#define GPUIsBusy (STATUSREG &= ~GPUSTATUS_IDLE)
-#define GPUIsIdle (STATUSREG |= GPUSTATUS_IDLE)
+#define GPUIsBusy() (STATUSREG &= ~GPUSTATUS_IDLE)
+#define GPUIsIdle() (STATUSREG |= GPUSTATUS_IDLE)
 
-#define GPUIsNotReadyForCommands (STATUSREG &= ~GPUSTATUS_READYFORCOMMANDS)
-#define GPUIsReadyForCommands (STATUSREG |= GPUSTATUS_READYFORCOMMANDS)
+#define GPUIsNotReadyForCommands() (STATUSREG &= ~GPUSTATUS_READYFORCOMMANDS)
+#define GPUIsReadyForCommands() (STATUSREG |= GPUSTATUS_READYFORCOMMANDS)
 
 #define LOWORD(l) ((uint16_t)(l))
 #define HIWORD(l) ((uint16_t)(((uint32_t)(l) >> 16) & 0xFFFF))
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-
 
 // internally used defines
 
@@ -104,9 +103,6 @@
 #define PRED(x) ((x << 3) & 0xF8)
 #define PBLUE(x) ((x >> 2) & 0xF8)
 #define PGREEN(x) ((x >> 7) & 0xF8)
-
-
-
 
 typedef struct RECTTAG
 {
@@ -197,14 +193,6 @@ typedef struct OGLVertexTag
 	COLTAG c;
 } OGLVertex;
 
-typedef struct OGLVertexGLMTag
-{
-	glm::vec3 Position;
-	glm::vec2 Texture;
-	glm::vec4 Color;
-	uint32_t LColor; //have no idea what this is used for, but it works...
-} OGLVertexGLM;
-
 typedef union EXShortTag
 {
 	uint8_t c[2];
@@ -228,16 +216,14 @@ typedef struct GPUFREEZETAG
 
 extern int iResX;
 extern int iResY;
-extern RECT rRatioRect;
 
 extern uint8_t gl_ux[8];
 extern uint8_t gl_vy[8];
 extern OGLVertex vertex[4];
 extern int16_t sprtY, sprtX, sprtH, sprtW;
-extern GLbitfield uiBufferBits;
 
 extern int GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
-extern int GlobalTextREST, GlobalTextABR, GlobalTextPAGE;
+extern int GlobalTextREST, GlobalTextABR;
 extern int16_t ly0, lx0, ly1, lx1, ly2, lx2, ly3, lx3;
 extern int16_t g_m1;
 extern int16_t g_m2;
@@ -247,9 +233,7 @@ extern int16_t DrawSemiTrans;
 extern bool bNeedUploadTest;
 extern bool bNeedUploadAfter;
 extern bool bTexEnabled;
-extern bool bBlendEnable;
 extern bool bFullVRam;
-extern bool bOldSmoothShaded;
 extern bool bUsingTWin;
 extern PSXRect_t xrMovieArea;
 extern PSXRect_t xrUploadArea;
@@ -258,8 +242,6 @@ extern GLuint gTexName;
 extern bool bDrawMultiPass;
 extern GLubyte ubGloColAlpha;
 extern GLubyte ubGloAlpha;
-extern int16_t sSprite_ux2;
-extern int16_t sSprite_vy2;
 extern bool bRenderFrontBuffer;
 extern void (*primTableJ[256])(uint8_t *);
 extern uint16_t usMirror;
@@ -279,7 +261,6 @@ extern uint8_t ubOpaqueDraw;
 extern void (*LoadSubTexFn)(int, int, int16_t, int16_t);
 extern int GlobalTexturePage;
 extern uint32_t (*TCF[])(uint32_t);
-extern uint32_t (*PalTexturedColourFn)(uint32_t);
 extern int iFrameReadType;
 extern bool bFakeFrontBuffer;
 extern GLuint gTexFrameName;
@@ -313,9 +294,38 @@ extern int iTileCheat;
 
 // prototypes
 
+extern "C" const char *PSEgetLibName(void);
+extern "C" uint32_t PSEgetLibType(void);
+extern "C" uint32_t PSEgetLibVersion(void);
+extern "C" const char *GPUgetLibInfos(void);
+extern "C" void GPUmakeSnapshot(void);
+extern "C" int32_t GPUinit(void);
+extern "C" int32_t GPUopen(uint32_t *, char *, char *);
+extern "C" int32_t GPUclose(void);
+extern "C" int32_t GPUshutdown(void);
+extern "C" void GPUcursor(int, int, int);
+extern "C" void GPUupdateLace(void);
+extern "C" uint32_t GPUreadStatus(void);
+extern "C" void GPUwriteStatus(uint32_t);
+extern "C" void GPUreadDataMem(uint32_t *, int);
+extern "C" uint32_t GPUreadData(void);
+extern "C" void GPUwriteDataMem(uint32_t *, int);
+extern "C" int32_t GPUconfigure(void);
+extern "C" void GPUwriteData(uint32_t);
+extern "C" void GPUabout(void);
+extern "C" int32_t GPUtest(void);
+extern "C" int32_t GPUdmaChain(uint32_t *, uint32_t);
+extern "C" int32_t GPUfreeze(uint32_t, GPUFreeze_t *);
+extern "C" void GPUgetScreenPic(uint8_t *);
+extern "C" void GPUshowScreenPic(uint8_t *);
+extern "C" void GPUsetfix(uint32_t);
+extern "C" void GPUvisualVibration(uint32_t, uint32_t);
+extern "C" void GPUvBlank(int);
+extern "C" void GPUhSync(int);
+
 extern int32_t LoadPSE();
 extern int32_t OpenPSE();
-extern int32_t ClosePSE() ;
+extern int32_t ClosePSE();
 extern int32_t ShutdownPSE();
 extern void UpdateLacePSE();
 extern uint32_t ReadStatusPSE();
@@ -326,28 +336,15 @@ extern void WriteDataMemPSE(uint32_t *, int);
 extern void WriteDataPSE(uint32_t);
 extern int32_t DmaChainPSE(uint32_t *, uint32_t);
 extern int32_t FreezePSE(uint32_t, GPUFreeze_t *);
-extern void GetScreenPicPSE(uint8_t *);
 extern void VBlankPSE(int);
 extern void HSyncPSE(int);
 
 extern void clearWithColor(int);
 extern void clearToBlack(void);
-extern OGLVertexGLM OGLVertexToOGLVertexGLM(OGLVertex);
-extern OGLVertex OGLVertexGLMToOGLVertex(OGLVertexGLM);
 
 extern int GLinitialize(void);
 extern int GLrefresh(void);
 extern void GLcleanup(void);
-extern bool offset3(void);
-extern bool offset4(void);
-extern bool offsetline(void);
-extern void offsetST(void);
-extern void offsetBlk(void);
-extern void offsetScreenUpload(int);
-extern void assignTexture3(void);
-extern void assignTexture4(void);
-extern void assignTextureSprite(void);
-extern void assignTextureVRAMWrite(void);
 extern void SetOGLDisplaySettings(bool);
 extern void SetExtGLFuncs(void);
 
@@ -363,10 +360,6 @@ extern bool CheckAgainstFrontScreen(int16_t, int16_t, int16_t, int16_t);
 extern bool FastCheckAgainstScreen(int16_t, int16_t, int16_t, int16_t);
 extern bool FastCheckAgainstFrontScreen(int16_t, int16_t, int16_t, int16_t);
 extern void CheckWriteUpdate(void);
-
-extern void offsetPSXLine(void);
-extern void offsetPSX3(void);
-extern void offsetPSX4(void);
 
 extern void FillSoftwareAreaTrans(int16_t, int16_t, int16_t, int16_t, uint16_t);
 extern void FillSoftwareArea(int16_t, int16_t, int16_t, int16_t, uint16_t);

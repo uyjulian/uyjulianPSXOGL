@@ -15,7 +15,7 @@
  *   additional informations.                                              *
  *                                                                         *
  ***************************************************************************/
- 
+
 #include "externals.h"
 
 ////////////////////////////////////////////////////////////////////////
@@ -24,36 +24,687 @@
 
 static bool bDrawTextured; // current active drawing states
 static bool bDrawSmoothShaded;
-bool bOldSmoothShaded;
+static bool bOldSmoothShaded;
 static bool bDrawNonShaded;
 bool bDrawMultiPass;
 int iDrawnSomething = 0;
 
 bool bRenderFrontBuffer = false; // flag for front buffer rendering
 
-GLubyte ubGloAlpha;          // texture alpha
-GLubyte ubGloColAlpha;       // color alpha
-bool bFullVRam = false;      // sign for tex win
-GLuint gTexName;             // binded texture
-bool bTexEnabled;            // texture enable flag
-bool bBlendEnable;           // blend enable flag
-PSXRect_t xrUploadArea;      // rect to upload
-PSXRect_t xrUploadAreaIL;    // rect to upload
+GLubyte ubGloAlpha;                 // texture alpha
+GLubyte ubGloColAlpha;              // color alpha
+bool bFullVRam = false;             // sign for tex win
+GLuint gTexName;                    // binded texture
+bool bTexEnabled;                   // texture enable flag
+static bool bBlendEnable;           // blend enable flag
+PSXRect_t xrUploadArea;             // rect to upload
+PSXRect_t xrUploadAreaIL;           // rect to upload
 static PSXRect_t xrUploadAreaRGB24; // rect to upload rgb24
-int iSpriteTex = 0;          // flag for "hey, it's a sprite"
-uint16_t usMirror;           // mirror, mirror on the wall
+int iSpriteTex = 0;                 // flag for "hey, it's a sprite"
+uint16_t usMirror;                  // mirror, mirror on the wall
 
-bool bNeedUploadAfter = false; // sign for uploading in next frame
-bool bNeedUploadTest = false;  // sign for upload test
-bool bUsingTWin = false;       // tex win active flag
-static bool bUsingMovie = false;      // movie active flag
-PSXRect_t xrMovieArea;         // rect for movie upload
-int16_t sSprite_ux2;           // needed for sprire adjust
-int16_t sSprite_vy2;           //
-static uint32_t ulClutID;             // clut
+bool bNeedUploadAfter = false;   // sign for uploading in next frame
+bool bNeedUploadTest = false;    // sign for upload test
+bool bUsingTWin = false;         // tex win active flag
+static bool bUsingMovie = false; // movie active flag
+PSXRect_t xrMovieArea;           // rect for movie upload
+static int16_t sSprite_ux2;      // needed for sprire adjust
+static int16_t sSprite_vy2;      //
+static uint32_t ulClutID;        // clut
 
 int drawX, drawY, drawW, drawH; // offscreen drawing checkers
 int16_t sxmin, sxmax, symin, symax;
+
+////////////////////////////////////////////////////////////////////////
+// Offset stuff
+////////////////////////////////////////////////////////////////////////
+
+// please note: it is hardly do-able in a hw/accel plugin to get the
+//              real psx polygon coord mapping right... the following
+//              works not to bad with many games, though
+
+static __inline bool CheckCoord4()
+{
+	if (lx0 < 0)
+	{
+		if (((lx1 - lx0) > CHKMAX_X) || ((lx2 - lx0) > CHKMAX_X))
+		{
+			if (lx3 < 0)
+			{
+				if ((lx1 - lx3) > CHKMAX_X)
+					return true;
+				if ((lx2 - lx3) > CHKMAX_X)
+					return true;
+			}
+		}
+	}
+	if (lx1 < 0)
+	{
+		if ((lx0 - lx1) > CHKMAX_X)
+			return true;
+		if ((lx2 - lx1) > CHKMAX_X)
+			return true;
+		if ((lx3 - lx1) > CHKMAX_X)
+			return true;
+	}
+	if (lx2 < 0)
+	{
+		if ((lx0 - lx2) > CHKMAX_X)
+			return true;
+		if ((lx1 - lx2) > CHKMAX_X)
+			return true;
+		if ((lx3 - lx2) > CHKMAX_X)
+			return true;
+	}
+	if (lx3 < 0)
+	{
+		if (((lx1 - lx3) > CHKMAX_X) || ((lx2 - lx3) > CHKMAX_X))
+		{
+			if (lx0 < 0)
+			{
+				if ((lx1 - lx0) > CHKMAX_X)
+					return true;
+				if ((lx2 - lx0) > CHKMAX_X)
+					return true;
+			}
+		}
+	}
+
+	if (ly0 < 0)
+	{
+		if ((ly1 - ly0) > CHKMAX_Y)
+			return true;
+		if ((ly2 - ly0) > CHKMAX_Y)
+			return true;
+	}
+	if (ly1 < 0)
+	{
+		if ((ly0 - ly1) > CHKMAX_Y)
+			return true;
+		if ((ly2 - ly1) > CHKMAX_Y)
+			return true;
+		if ((ly3 - ly1) > CHKMAX_Y)
+			return true;
+	}
+	if (ly2 < 0)
+	{
+		if ((ly0 - ly2) > CHKMAX_Y)
+			return true;
+		if ((ly1 - ly2) > CHKMAX_Y)
+			return true;
+		if ((ly3 - ly2) > CHKMAX_Y)
+			return true;
+	}
+	if (ly3 < 0)
+	{
+		if ((ly1 - ly3) > CHKMAX_Y)
+			return true;
+		if ((ly2 - ly3) > CHKMAX_Y)
+			return true;
+	}
+
+	return false;
+}
+
+static __inline bool CheckCoord3()
+{
+	if (lx0 < 0)
+	{
+		if ((lx1 - lx0) > CHKMAX_X)
+			return true;
+		if ((lx2 - lx0) > CHKMAX_X)
+			return true;
+	}
+	if (lx1 < 0)
+	{
+		if ((lx0 - lx1) > CHKMAX_X)
+			return true;
+		if ((lx2 - lx1) > CHKMAX_X)
+			return true;
+	}
+	if (lx2 < 0)
+	{
+		if ((lx0 - lx2) > CHKMAX_X)
+			return true;
+		if ((lx1 - lx2) > CHKMAX_X)
+			return true;
+	}
+	if (ly0 < 0)
+	{
+		if ((ly1 - ly0) > CHKMAX_Y)
+			return true;
+		if ((ly2 - ly0) > CHKMAX_Y)
+			return true;
+	}
+	if (ly1 < 0)
+	{
+		if ((ly0 - ly1) > CHKMAX_Y)
+			return true;
+		if ((ly2 - ly1) > CHKMAX_Y)
+			return true;
+	}
+	if (ly2 < 0)
+	{
+		if ((ly0 - ly2) > CHKMAX_Y)
+			return true;
+		if ((ly1 - ly2) > CHKMAX_Y)
+			return true;
+	}
+
+	return false;
+}
+
+static __inline bool CheckCoord2()
+{
+	if (lx0 < 0)
+	{
+		if ((lx1 - lx0) > CHKMAX_X)
+			return true;
+	}
+	if (lx1 < 0)
+	{
+		if ((lx0 - lx1) > CHKMAX_X)
+			return true;
+	}
+	if (ly0 < 0)
+	{
+		if ((ly1 - ly0) > CHKMAX_Y)
+			return true;
+	}
+	if (ly1 < 0)
+	{
+		if ((ly0 - ly1) > CHKMAX_Y)
+			return true;
+	}
+
+	return false;
+}
+
+////////////////////////////////////////////////////////////////////////
+// POLYGON OFFSET FUNCS
+////////////////////////////////////////////////////////////////////////
+
+static void offsetPSXLine(void)
+{
+	int16_t x0, x1, y0, y1, dx, dy;
+	float px, py;
+
+	x0 = lx0 + 1 + PSXDisplay.DrawOffset.x;
+	x1 = lx1 + 1 + PSXDisplay.DrawOffset.x;
+	y0 = ly0 + 1 + PSXDisplay.DrawOffset.y;
+	y1 = ly1 + 1 + PSXDisplay.DrawOffset.y;
+
+	dx = x1 - x0;
+	dy = y1 - y0;
+
+	// tricky line width without sqrt
+
+	if (dx >= 0)
+	{
+		if (dy >= 0)
+		{
+			px = 0.5f;
+			if (dx > dy)
+				py = -0.5f;
+			else if (dx < dy)
+				py = 0.5f;
+			else
+				py = 0.0f;
+		}
+		else
+		{
+			py = -0.5f;
+			dy = -dy;
+			if (dx > dy)
+				px = 0.5f;
+			else if (dx < dy)
+				px = -0.5f;
+			else
+				px = 0.0f;
+		}
+	}
+	else
+	{
+		if (dy >= 0)
+		{
+			py = 0.5f;
+			dx = -dx;
+			if (dx > dy)
+				px = -0.5f;
+			else if (dx < dy)
+				px = 0.5f;
+			else
+				px = 0.0f;
+		}
+		else
+		{
+			px = -0.5f;
+			if (dx > dy)
+				py = -0.5f;
+			else if (dx < dy)
+				py = 0.5f;
+			else
+				py = 0.0f;
+		}
+	}
+
+	lx0 = (int16_t)((float)x0 - px);
+	lx3 = (int16_t)((float)x0 + py);
+
+	ly0 = (int16_t)((float)y0 - py);
+	ly3 = (int16_t)((float)y0 - px);
+
+	lx1 = (int16_t)((float)x1 - py);
+	lx2 = (int16_t)((float)x1 + px);
+
+	ly1 = (int16_t)((float)y1 + px);
+	ly2 = (int16_t)((float)y1 + py);
+}
+
+static void offsetPSX3(void)
+{
+	lx0 += PSXDisplay.DrawOffset.x;
+	ly0 += PSXDisplay.DrawOffset.y;
+	lx1 += PSXDisplay.DrawOffset.x;
+	ly1 += PSXDisplay.DrawOffset.y;
+	lx2 += PSXDisplay.DrawOffset.x;
+	ly2 += PSXDisplay.DrawOffset.y;
+}
+
+static void offsetPSX4(void)
+{
+	lx0 += PSXDisplay.DrawOffset.x;
+	ly0 += PSXDisplay.DrawOffset.y;
+	lx1 += PSXDisplay.DrawOffset.x;
+	ly1 += PSXDisplay.DrawOffset.y;
+	lx2 += PSXDisplay.DrawOffset.x;
+	ly2 += PSXDisplay.DrawOffset.y;
+	lx3 += PSXDisplay.DrawOffset.x;
+	ly3 += PSXDisplay.DrawOffset.y;
+}
+
+static bool offsetline(void)
+{
+	int16_t x0, x1, y0, y1, dx, dy;
+	float px, py;
+
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+
+	if (CheckCoord2())
+		return true;
+
+	x0 = (lx0 + PSXDisplay.CumulOffset.x) + 1;
+	x1 = (lx1 + PSXDisplay.CumulOffset.x) + 1;
+	y0 = (ly0 + PSXDisplay.CumulOffset.y) + 1;
+	y1 = (ly1 + PSXDisplay.CumulOffset.y) + 1;
+
+	dx = x1 - x0;
+	dy = y1 - y0;
+
+	if (dx >= 0)
+	{
+		if (dy >= 0)
+		{
+			px = 0.5f;
+			if (dx > dy)
+				py = -0.5f;
+			else if (dx < dy)
+				py = 0.5f;
+			else
+				py = 0.0f;
+		}
+		else
+		{
+			py = -0.5f;
+			dy = -dy;
+			if (dx > dy)
+				px = 0.5f;
+			else if (dx < dy)
+				px = -0.5f;
+			else
+				px = 0.0f;
+		}
+	}
+	else
+	{
+		if (dy >= 0)
+		{
+			py = 0.5f;
+			dx = -dx;
+			if (dx > dy)
+				px = -0.5f;
+			else if (dx < dy)
+				px = 0.5f;
+			else
+				px = 0.0f;
+		}
+		else
+		{
+			px = -0.5f;
+			if (dx > dy)
+				py = -0.5f;
+			else if (dx < dy)
+				py = 0.5f;
+			else
+				py = 0.0f;
+		}
+	}
+
+	vertex[0].x = (int16_t)((float)x0 - px);
+	vertex[3].x = (int16_t)((float)x0 + py);
+
+	vertex[0].y = (int16_t)((float)y0 - py);
+	vertex[3].y = (int16_t)((float)y0 - px);
+
+	vertex[1].x = (int16_t)((float)x1 - py);
+	vertex[2].x = (int16_t)((float)x1 + px);
+
+	vertex[1].y = (int16_t)((float)y1 + px);
+	vertex[2].y = (int16_t)((float)y1 + py);
+
+	if (vertex[0].x == vertex[3].x && // ortho rect? done
+	    vertex[1].x == vertex[2].x && vertex[0].y == vertex[1].y && vertex[2].y == vertex[3].y)
+		return false;
+	if (vertex[0].x == vertex[1].x && vertex[2].x == vertex[3].x && vertex[0].y == vertex[3].y &&
+	    vertex[1].y == vertex[2].y)
+		return false;
+
+	return false;
+}
+
+static bool offset3(void)
+{
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	lx2 = (int16_t)(((int)lx2 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly2 = (int16_t)(((int)ly2 << SIGNSHIFT) >> SIGNSHIFT);
+
+	if (CheckCoord3())
+		return true;
+
+	vertex[0].x = lx0;
+	vertex[0].y = ly0;
+
+	vertex[1].x = lx1;
+	vertex[1].y = ly1;
+
+	vertex[2].x = lx2;
+	vertex[2].y = ly2;
+
+	vertex[0].x += PSXDisplay.CumulOffset.x;
+	vertex[1].x += PSXDisplay.CumulOffset.x;
+	vertex[2].x += PSXDisplay.CumulOffset.x;
+	vertex[0].y += PSXDisplay.CumulOffset.y;
+	vertex[1].y += PSXDisplay.CumulOffset.y;
+	vertex[2].y += PSXDisplay.CumulOffset.y;
+
+	return false;
+}
+
+static bool offset4(void)
+{
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	lx2 = (int16_t)(((int)lx2 << SIGNSHIFT) >> SIGNSHIFT);
+	lx3 = (int16_t)(((int)lx3 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly2 = (int16_t)(((int)ly2 << SIGNSHIFT) >> SIGNSHIFT);
+	ly3 = (int16_t)(((int)ly3 << SIGNSHIFT) >> SIGNSHIFT);
+
+	if (CheckCoord4())
+		return true;
+
+	vertex[0].x = lx0;
+	vertex[0].y = ly0;
+
+	vertex[1].x = lx1;
+	vertex[1].y = ly1;
+
+	vertex[2].x = lx2;
+	vertex[2].y = ly2;
+
+	vertex[3].x = lx3;
+	vertex[3].y = ly3;
+
+	vertex[0].x += PSXDisplay.CumulOffset.x;
+	vertex[1].x += PSXDisplay.CumulOffset.x;
+	vertex[2].x += PSXDisplay.CumulOffset.x;
+	vertex[3].x += PSXDisplay.CumulOffset.x;
+	vertex[0].y += PSXDisplay.CumulOffset.y;
+	vertex[1].y += PSXDisplay.CumulOffset.y;
+	vertex[2].y += PSXDisplay.CumulOffset.y;
+	vertex[3].y += PSXDisplay.CumulOffset.y;
+
+	return false;
+}
+
+static void offsetST(void)
+{
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+
+	if (lx0 < -512 && PSXDisplay.DrawOffset.x <= -512)
+		lx0 += 2048;
+
+	if (ly0 < -512 && PSXDisplay.DrawOffset.y <= -512)
+		ly0 += 2048;
+
+	ly1 = ly0;
+	ly2 = ly3 = ly0 + sprtH;
+	lx3 = lx0;
+	lx1 = lx2 = lx0 + sprtW;
+
+	vertex[0].x = lx0 + PSXDisplay.CumulOffset.x;
+	vertex[1].x = lx1 + PSXDisplay.CumulOffset.x;
+	vertex[2].x = lx2 + PSXDisplay.CumulOffset.x;
+	vertex[3].x = lx3 + PSXDisplay.CumulOffset.x;
+	vertex[0].y = ly0 + PSXDisplay.CumulOffset.y;
+	vertex[1].y = ly1 + PSXDisplay.CumulOffset.y;
+	vertex[2].y = ly2 + PSXDisplay.CumulOffset.y;
+	vertex[3].y = ly3 + PSXDisplay.CumulOffset.y;
+}
+
+static void offsetScreenUpload(int Position)
+{
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	if (Position == -1)
+	{
+		int lmdx, lmdy;
+
+		lmdx = xrUploadArea.x0;
+		lmdy = xrUploadArea.y0;
+
+		lx0 -= lmdx;
+		ly0 -= lmdy;
+		lx1 -= lmdx;
+		ly1 -= lmdy;
+		lx2 -= lmdx;
+		ly2 -= lmdy;
+		lx3 -= lmdx;
+		ly3 -= lmdy;
+	}
+	else if (Position)
+	{
+		lx0 -= PSXDisplay.DisplayPosition.x;
+		ly0 -= PSXDisplay.DisplayPosition.y;
+		lx1 -= PSXDisplay.DisplayPosition.x;
+		ly1 -= PSXDisplay.DisplayPosition.y;
+		lx2 -= PSXDisplay.DisplayPosition.x;
+		ly2 -= PSXDisplay.DisplayPosition.y;
+		lx3 -= PSXDisplay.DisplayPosition.x;
+		ly3 -= PSXDisplay.DisplayPosition.y;
+	}
+	else
+	{
+		lx0 -= PreviousPSXDisplay.DisplayPosition.x;
+		ly0 -= PreviousPSXDisplay.DisplayPosition.y;
+		lx1 -= PreviousPSXDisplay.DisplayPosition.x;
+		ly1 -= PreviousPSXDisplay.DisplayPosition.y;
+		lx2 -= PreviousPSXDisplay.DisplayPosition.x;
+		ly2 -= PreviousPSXDisplay.DisplayPosition.y;
+		lx3 -= PreviousPSXDisplay.DisplayPosition.x;
+		ly3 -= PreviousPSXDisplay.DisplayPosition.y;
+	}
+
+	vertex[0].x = lx0 + PreviousPSXDisplay.Range.x0;
+	vertex[1].x = lx1 + PreviousPSXDisplay.Range.x0;
+	vertex[2].x = lx2 + PreviousPSXDisplay.Range.x0;
+	vertex[3].x = lx3 + PreviousPSXDisplay.Range.x0;
+	vertex[0].y = ly0 + PreviousPSXDisplay.Range.y0;
+	vertex[1].y = ly1 + PreviousPSXDisplay.Range.y0;
+	vertex[2].y = ly2 + PreviousPSXDisplay.Range.y0;
+	vertex[3].y = ly3 + PreviousPSXDisplay.Range.y0;
+}
+
+static void offsetBlk(void)
+{
+	if (bDisplayNotSet)
+		SetOGLDisplaySettings(1);
+
+	vertex[0].x = lx0 - PSXDisplay.GDrawOffset.x + PreviousPSXDisplay.Range.x0;
+	vertex[1].x = lx1 - PSXDisplay.GDrawOffset.x + PreviousPSXDisplay.Range.x0;
+	vertex[2].x = lx2 - PSXDisplay.GDrawOffset.x + PreviousPSXDisplay.Range.x0;
+	vertex[3].x = lx3 - PSXDisplay.GDrawOffset.x + PreviousPSXDisplay.Range.x0;
+	vertex[0].y = ly0 - PSXDisplay.GDrawOffset.y + PreviousPSXDisplay.Range.y0;
+	vertex[1].y = ly1 - PSXDisplay.GDrawOffset.y + PreviousPSXDisplay.Range.y0;
+	vertex[2].y = ly2 - PSXDisplay.GDrawOffset.y + PreviousPSXDisplay.Range.y0;
+	vertex[3].y = ly3 - PSXDisplay.GDrawOffset.y + PreviousPSXDisplay.Range.y0;
+}
+
+static void assignTextureVRAMWrite(void)
+{
+	if (gl_ux[1] == 255)
+	{
+		vertex[0].sow = (gl_ux[0] * 255.99f) / 255.0f;
+		vertex[1].sow = (gl_ux[1] * 255.99f) / 255.0f;
+		vertex[2].sow = (gl_ux[2] * 255.99f) / 255.0f;
+		vertex[3].sow = (gl_ux[3] * 255.99f) / 255.0f;
+	}
+	else
+	{
+		vertex[0].sow = gl_ux[0];
+		vertex[1].sow = gl_ux[1];
+		vertex[2].sow = gl_ux[2];
+		vertex[3].sow = gl_ux[3];
+	}
+
+	vertex[0].tow = gl_vy[0];
+	vertex[1].tow = gl_vy[1];
+	vertex[2].tow = gl_vy[2];
+	vertex[3].tow = gl_vy[3];
+}
+
+static GLuint gLastTex = 0;
+
+/////////////////////////////////////////////////////////
+
+static void assignTextureSprite(void)
+{
+	if (bUsingTWin)
+	{
+		vertex[0].sow = vertex[3].sow = (float)gl_ux[0] / TWin.UScaleFactor;
+		vertex[1].sow = vertex[2].sow = (float)sSprite_ux2 / TWin.UScaleFactor;
+		vertex[0].tow = vertex[1].tow = (float)gl_vy[0] / TWin.VScaleFactor;
+		vertex[2].tow = vertex[3].tow = (float)sSprite_vy2 / TWin.VScaleFactor;
+		gLastTex = gTexName;
+	}
+	else
+	{
+
+		vertex[0].sow = vertex[3].sow = gl_ux[0];
+		vertex[1].sow = vertex[2].sow = sSprite_ux2;
+		vertex[0].tow = vertex[1].tow = gl_vy[0];
+		vertex[2].tow = vertex[3].tow = sSprite_vy2;
+	}
+
+	if (usMirror & 0x1000)
+	{
+		vertex[0].sow = vertex[1].sow;
+		vertex[1].sow = vertex[2].sow = vertex[3].sow;
+		vertex[3].sow = vertex[0].sow;
+	}
+
+	if (usMirror & 0x2000)
+	{
+		vertex[0].tow = vertex[3].tow;
+		vertex[2].tow = vertex[3].tow = vertex[1].tow;
+		vertex[1].tow = vertex[0].tow;
+	}
+}
+
+/////////////////////////////////////////////////////////
+
+static void assignTexture3(void)
+{
+	if (bUsingTWin)
+	{
+		vertex[0].sow = (float)gl_ux[0] / TWin.UScaleFactor;
+		vertex[0].tow = (float)gl_vy[0] / TWin.VScaleFactor;
+		vertex[1].sow = (float)gl_ux[1] / TWin.UScaleFactor;
+		vertex[1].tow = (float)gl_vy[1] / TWin.VScaleFactor;
+		vertex[2].sow = (float)gl_ux[2] / TWin.UScaleFactor;
+		vertex[2].tow = (float)gl_vy[2] / TWin.VScaleFactor;
+		gLastTex = gTexName;
+	}
+	else
+	{
+		vertex[0].sow = gl_ux[0];
+		vertex[0].tow = gl_vy[0];
+		vertex[1].sow = gl_ux[1];
+		vertex[1].tow = gl_vy[1];
+		vertex[2].sow = gl_ux[2];
+		vertex[2].tow = gl_vy[2];
+	}
+}
+
+/////////////////////////////////////////////////////////
+
+static void assignTexture4(void)
+{
+	if (bUsingTWin)
+	{
+		vertex[0].sow = (float)gl_ux[0] / TWin.UScaleFactor;
+		vertex[0].tow = (float)gl_vy[0] / TWin.VScaleFactor;
+		vertex[1].sow = (float)gl_ux[1] / TWin.UScaleFactor;
+		vertex[1].tow = (float)gl_vy[1] / TWin.VScaleFactor;
+		vertex[2].sow = (float)gl_ux[2] / TWin.UScaleFactor;
+		vertex[2].tow = (float)gl_vy[2] / TWin.VScaleFactor;
+		vertex[3].sow = (float)gl_ux[3] / TWin.UScaleFactor;
+		vertex[3].tow = (float)gl_vy[3] / TWin.VScaleFactor;
+		gLastTex = gTexName;
+	}
+	else
+	{
+		vertex[0].sow = gl_ux[0];
+		vertex[0].tow = gl_vy[0];
+		vertex[1].sow = gl_ux[1];
+		vertex[1].tow = gl_vy[1];
+		vertex[2].sow = gl_ux[2];
+		vertex[2].tow = gl_vy[2];
+		vertex[3].sow = gl_ux[3];
+		vertex[3].tow = gl_vy[3];
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Update global TP infos
@@ -326,9 +977,9 @@ typedef struct SEMITRANSTAG
 } SemiTransParams;
 
 static SemiTransParams TransSets[4] = {{GL_SRC_ALPHA, GL_SRC_ALPHA, 127},
-                                {GL_ONE, GL_ONE, 255},
-                                {GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 255},
-                                {GL_ONE_MINUS_SRC_ALPHA, GL_ONE, 192}};
+                                       {GL_ONE, GL_ONE, 255},
+                                       {GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 255},
+                                       {GL_ONE_MINUS_SRC_ALPHA, GL_ONE, 192}};
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -381,9 +1032,9 @@ static SemiTransParams MultiTexTransSets[4][2] = {
 ////////////////////////////////////////////////////////////////////////
 
 static SemiTransParams MultiColTransSets[4] = {{GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, 127},
-                                        {GL_ONE, GL_ONE, 255},
-                                        {GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 255},
-                                        {GL_SRC_ALPHA, GL_ONE, 127}};
+                                               {GL_ONE, GL_ONE, 255},
+                                               {GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 255},
+                                               {GL_SRC_ALPHA, GL_ONE, 127}};
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -517,7 +1168,7 @@ static void SetRenderMode(uint32_t DrawAttributes, bool bSCol)
 			vertex[0].c.lcol = DoubleBGR2RGB(DrawAttributes);
 		}
 		vertex[0].c.col[3] = ubGloAlpha; // -> set color with
-		glColor4ubv(vertex[0].c.col);               //    texture alpha
+		glColor4ubv(vertex[0].c.col);    //    texture alpha
 	}
 
 	if (bDrawSmoothShaded != bOldSmoothShaded) // shading changed?
@@ -1111,7 +1762,6 @@ static void cmdSTP(uint8_t *baseAddr)
 
 	STATUSREG &= ~0x1800;                // clear the necessary bits
 	STATUSREG |= ((gdata & 0x03) << 11); // set the current bits
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1225,7 +1875,6 @@ static void cmdTextureWindow(uint8_t *baseAddr)
 		TWin.VScaleFactor = ((float)TWin.Position.y1) / 256.0f;
 	}
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Check draw area dimensions
@@ -1538,7 +2187,6 @@ void CheckWriteUpdate()
 				xrUploadArea.y0 = min(xrUploadArea.y0, VRAMWrite.y);
 				xrUploadArea.y1 = max(xrUploadArea.y1, VRAMWrite.y + VRAMWrite.Height);
 			}
-
 		}
 	}
 }
@@ -1644,7 +2292,6 @@ static void primBlkFill(uint8_t *baseAddr)
 					PRIMdrawQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 				}
 			}
-
 		}
 		else
 		{
@@ -1682,7 +2329,7 @@ static void primBlkFill(uint8_t *baseAddr)
 ////////////////////////////////////////////////////////////////////////
 
 static void MoveImageWrapped(int16_t imageX0, int16_t imageY0, int16_t imageX1, int16_t imageY1, int16_t imageSX,
-                      int16_t imageSY)
+                             int16_t imageSY)
 {
 	int i, j, imageXE, imageYE;
 
@@ -1913,7 +2560,7 @@ static void primTileS(uint8_t *baseAddr)
 
 	SetRenderState(gpuData[0]);
 
-	if (IsPrimCompleteInsideNextScreen(lx0, ly0, lx2, ly2) )
+	if (IsPrimCompleteInsideNextScreen(lx0, ly0, lx2, ly2))
 	{
 		lClearOnSwapColor = COLOR(gpuData[0]);
 		lClearOnSwap = 1;
@@ -1928,7 +2575,7 @@ static void primTileS(uint8_t *baseAddr)
 			FillSoftwareAreaTrans(lx0, ly0, lx2, ly2, BGR24to16(gpuData[0]));
 		}
 	}
-	
+
 	SetRenderMode(gpuData[0], false);
 
 	if (bIgnoreNextTile)
@@ -2658,11 +3305,7 @@ static void primPolyF4(uint8_t *baseAddr)
 // cmd: smooth shaded Poly4
 ////////////////////////////////////////////////////////////////////////
 
-void primPolyG4(uint8_t *baseAddr);
-
-////////////////////////////////////////////////////////////////////////
-
-void primPolyG4(uint8_t *baseAddr)
+static void primPolyG4(uint8_t *baseAddr)
 {
 	uint32_t *gpuData = (uint32_t *)baseAddr;
 	int16_t *sgpuData = ((int16_t *)baseAddr);
@@ -2907,10 +3550,10 @@ static void primPolyFT3(uint8_t *baseAddr)
 	// do texture UV coordinates stuff
 	gl_ux[0] = gl_ux[3] = baseAddr[8]; // gpuData[2]&0xff;
 	gl_vy[0] = gl_vy[3] = baseAddr[9]; //(gpuData[2]>>8)&0xff;
-	gl_ux[1] = baseAddr[16]; // gpuData[4]&0xff;
-	gl_vy[1] = baseAddr[17]; //(gpuData[4]>>8)&0xff;
-	gl_ux[2] = baseAddr[24]; // gpuData[6]&0xff;
-	gl_vy[2] = baseAddr[25]; //(gpuData[6]>>8)&0xff;
+	gl_ux[1] = baseAddr[16];           // gpuData[4]&0xff;
+	gl_vy[1] = baseAddr[17];           //(gpuData[4]>>8)&0xff;
+	gl_ux[2] = baseAddr[24];           // gpuData[6]&0xff;
+	gl_vy[2] = baseAddr[25];           //(gpuData[6]>>8)&0xff;
 
 	UpdateGlobalTP((uint16_t)(gpuData[4] >> 16));
 	ulClutID = gpuData[2] >> 16;
@@ -3273,10 +3916,10 @@ static void primPolyGT3(uint8_t *baseAddr)
 	// do texture stuff
 	gl_ux[0] = gl_ux[3] = baseAddr[8]; // gpuData[2]&0xff;
 	gl_vy[0] = gl_vy[3] = baseAddr[9]; //(gpuData[2]>>8)&0xff;
-	gl_ux[1] = baseAddr[20]; // gpuData[5]&0xff;
-	gl_vy[1] = baseAddr[21]; //(gpuData[5]>>8)&0xff;
-	gl_ux[2] = baseAddr[32]; // gpuData[8]&0xff;
-	gl_vy[2] = baseAddr[33]; //(gpuData[8]>>8)&0xff;
+	gl_ux[1] = baseAddr[20];           // gpuData[5]&0xff;
+	gl_vy[1] = baseAddr[21];           //(gpuData[5]>>8)&0xff;
+	gl_ux[2] = baseAddr[32];           // gpuData[8]&0xff;
+	gl_vy[2] = baseAddr[33];           //(gpuData[8]>>8)&0xff;
 
 	UpdateGlobalTP((uint16_t)(gpuData[5] >> 16));
 	ulClutID = (gpuData[2] >> 16);
@@ -3401,8 +4044,8 @@ static void primPolyGT4(uint8_t *baseAddr)
 		return;
 
 	// do texture stuff
-	gl_ux[0] = baseAddr[8]; // gpuData[2]&0xff;
-	gl_vy[0] = baseAddr[9]; //(gpuData[2]>>8)&0xff;
+	gl_ux[0] = baseAddr[8];  // gpuData[2]&0xff;
+	gl_vy[0] = baseAddr[9];  //(gpuData[2]>>8)&0xff;
 	gl_ux[1] = baseAddr[20]; // gpuData[5]&0xff;
 	gl_vy[1] = baseAddr[21]; //(gpuData[5]>>8)&0xff;
 	gl_ux[2] = baseAddr[32]; // gpuData[8]&0xff;
@@ -3504,7 +4147,6 @@ static void primPolyF3(uint8_t *baseAddr)
 		drawPoly3F(gpuData[0]);
 	}
 
-
 	SetRenderMode(gpuData[0], false);
 
 	vertex[0].c.lcol = gpuData[0];
@@ -3578,7 +4220,6 @@ static void primLineGEx(uint8_t *baseAddr)
 			lx1 = cx1;
 			ly0 = cy0;
 			ly1 = cy1;
-
 
 			PRIMdrawGouraudLine(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
 		}
@@ -3845,4 +4486,3 @@ void (*primTableJ[256])(uint8_t *) = {
     // f8
     primNI,         primNI,         primNI,           primNI,
     primNI,         primNI,         primNI,           primNI};
-
