@@ -152,21 +152,8 @@ static uint16_t CLUTYMASK = 0x1ff;
 static uint16_t MAXSORTTEX = 196;
 
 ////////////////////////////////////////////////////////////////////////
-// Texture color conversions... all my ASM funcs are removed for easier
-// porting... and honestly: nowadays the speed gain would be pointless
+// Texture color conversions
 ////////////////////////////////////////////////////////////////////////
-
-uint32_t XP8RGBA(uint32_t BGR)
-{
-	if (!(BGR & 0xffff))
-		return 0x50000000;
-	if (DrawSemiTrans && !(BGR & 0x8000))
-	{
-		ubOpaqueDraw = 1;
-		return ((((BGR << 3) & 0xf8) | ((BGR << 6) & 0xf800) | ((BGR << 9) & 0xf80000)) & 0xffffff);
-	}
-	return ((((BGR << 3) & 0xf8) | ((BGR << 6) & 0xf800) | ((BGR << 9) & 0xf80000)) & 0xffffff) | 0xff000000;
-}
 
 uint32_t XP8RGBA_0(uint32_t BGR)
 {

@@ -389,7 +389,6 @@ extern void LoadSubTexturePage(int, int, int16_t, int16_t);
 extern void LoadSubTexturePageSort(int, int, int16_t, int16_t);
 extern void LoadPackedSubTexturePage(int, int, int16_t, int16_t);
 extern void LoadPackedSubTexturePageSort(int, int, int16_t, int16_t);
-extern uint32_t XP8RGBA(uint32_t);
 extern uint32_t XP8RGBA_0(uint32_t);
 extern uint32_t XP8RGBA_1(uint32_t);
 

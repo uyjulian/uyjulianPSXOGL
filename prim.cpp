@@ -778,198 +778,95 @@ static uint16_t BGR24to16(uint32_t BGR)
 // OpenGL primitive drawing commands
 ////////////////////////////////////////////////////////////////////////
 
-static __inline void PRIMdrawTexturedQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
-                                          OGLVertex *vertex4)
+static __inline void PRIMdrawMain(GLenum mode, int howMany, bool enableColor, bool enableVertex, bool enableTextureCoord, OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	if (enableColor)
+		glEnableClientState(GL_COLOR_ARRAY);
+	else
+		glDisableClientState(GL_COLOR_ARRAY);
+	if (enableVertex)
+		glEnableClientState(GL_VERTEX_ARRAY);
+	else
+		glDisableClientState(GL_VERTEX_ARRAY);
+	if (enableTextureCoord)
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	else
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
 	OGLVertex vertexToDraw[4];
 	vertexToDraw[0] = *vertex1;
 	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex4;
-	vertexToDraw[3] = *vertex3;
+	vertexToDraw[2] = *vertex3;
+	if (howMany == 4)
+		vertexToDraw[3] = *vertex4;
 
-	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (enableColor)
+		glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
+	if (enableVertex)
+		glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
+	if (enableTextureCoord)
+		glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
+	
+	glDrawArrays(mode, 0, howMany);
 }
 
-/////////////////////////////////////////////////////////
+static __inline void PRIMdrawTexturedQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
+                                          OGLVertex *vertex4)
+{
+	PRIMdrawMain(GL_TRIANGLE_STRIP, 4, false, true, true, vertex1, vertex2, vertex4, vertex3);
+}
 
 static __inline void PRIMdrawTexturedTri(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[3];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-
-	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	PRIMdrawMain(GL_TRIANGLES, 3, false, true, true, vertex1, vertex2, vertex3, NULL);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTexGouraudTriColor(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[3];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-
-	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	PRIMdrawMain(GL_TRIANGLES, 3, true, true, true, vertex1, vertex2, vertex3, NULL);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTexGouraudTriColorQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
                                                     OGLVertex *vertex4)
 {
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex4;
-	vertexToDraw[3] = *vertex3;
-
-	glTexCoordPointer(2, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].sow);
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	PRIMdrawMain(GL_TRIANGLE_STRIP, 4, true, true, true, vertex1, vertex2, vertex4, vertex3);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTri(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[3];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	PRIMdrawMain(GL_TRIANGLES, 3, false, true, false, vertex1, vertex2, vertex3, NULL);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawTri2(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex3;
-	vertexToDraw[2] = *vertex2;
-	vertexToDraw[3] = *vertex4;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	PRIMdrawMain(GL_TRIANGLE_STRIP, 4, false, true, false, vertex1, vertex3, vertex2, vertex4);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawGouraudTriColor(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3)
 {
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[3];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	PRIMdrawMain(GL_TRIANGLE_STRIP, 3, true, true, false, vertex1, vertex2, vertex3, NULL);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawGouraudTri2Color(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3,
                                               OGLVertex *vertex4)
 {
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex3;
-	vertexToDraw[2] = *vertex2;
-	vertexToDraw[3] = *vertex4;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	PRIMdrawMain(GL_TRIANGLE_STRIP, 4, true, true, false, vertex1, vertex3, vertex2, vertex4);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawFlatLine(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-	vertexToDraw[3] = *vertex4;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
 	glColor4ubv(vertex1->c.col);
-	glDrawArrays(GL_QUADS, 0, 3);
+	PRIMdrawMain(GL_QUADS, 4, false, true, false, vertex1, vertex2, vertex3, vertex4);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawGouraudLine(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-	vertexToDraw[3] = *vertex4;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vertexToDraw[0]), &vertexToDraw[0].c.col[0]);
-	glDrawArrays(GL_QUADS, 0, 4);
+	PRIMdrawMain(GL_QUADS, 4, true, true, false, vertex1, vertex2, vertex3, vertex4);
 }
-
-/////////////////////////////////////////////////////////
 
 static __inline void PRIMdrawQuad(OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
-	glDisableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	OGLVertex vertexToDraw[4];
-	vertexToDraw[0] = *vertex1;
-	vertexToDraw[1] = *vertex2;
-	vertexToDraw[2] = *vertex3;
-	vertexToDraw[3] = *vertex4;
-
-	glVertexPointer(3, GL_FLOAT, sizeof(vertexToDraw[0]), &vertexToDraw[0].x);
-	glDrawArrays(GL_QUADS, 0, 4);
+	PRIMdrawMain(GL_QUADS, 4, false, true, false, vertex1, vertex2, vertex3, vertex4);
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -11,11 +11,9 @@ Please send in pull requests and issues (and fork!)
 Todo
 ====
 
-• Use vertex arrays instead of the glBegin/glEnd stuff
-
 • Figure out how to do offscreen hardware rendering (currently uses a software fallback)
 
-• Use integer, not floating point calculations (floating point hacks == bugs)
+• Use integer, not floating point calculations (floating point hacks == bugs, causes flickering)
 
 • Remove ugly hacks/ugly code
 
