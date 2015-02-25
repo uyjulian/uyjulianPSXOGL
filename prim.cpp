@@ -27,7 +27,7 @@ static bool bDrawSmoothShaded;
 static bool bOldSmoothShaded;
 static bool bDrawNonShaded;
 bool bDrawMultiPass;
-int iDrawnSomething = 0;
+int32_t iDrawnSomething = 0;
 
 bool bRenderFrontBuffer = false; // flag for front buffer rendering
 
@@ -40,7 +40,7 @@ static bool bBlendEnable;           // blend enable flag
 PSXRect_t xrUploadArea;             // rect to upload
 PSXRect_t xrUploadAreaIL;           // rect to upload
 static PSXRect_t xrUploadAreaRGB24; // rect to upload rgb24
-int iSpriteTex = 0;                 // flag for "hey, it's a sprite"
+int32_t iSpriteTex = 0;                 // flag for "hey, it's a sprite"
 uint16_t usMirror;                  // mirror, mirror on the wall
 
 bool bNeedUploadAfter = false;   // sign for uploading in next frame
@@ -52,7 +52,7 @@ static int16_t sSprite_ux2;      // needed for sprire adjust
 static int16_t sSprite_vy2;      //
 static uint32_t ulClutID;        // clut
 
-int drawX, drawY, drawW, drawH; // offscreen drawing checkers
+int32_t drawX, drawY, drawW, drawH; // offscreen drawing checkers
 int16_t sxmin, sxmax, symin, symax;
 
 ////////////////////////////////////////////////////////////////////////
@@ -331,10 +331,10 @@ static bool offsetline(void)
 	if (bDisplayNotSet)
 		SetOGLDisplaySettings(1);
 
-	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
-	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
-	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
-	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+	lx0 = (int16_t)(((int32_t)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int32_t)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int32_t)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int32_t)ly1 << SIGNSHIFT) >> SIGNSHIFT);
 
 	if (CheckCoord2())
 		return true;
@@ -423,12 +423,12 @@ static bool offset3(void)
 	if (bDisplayNotSet)
 		SetOGLDisplaySettings(1);
 
-	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
-	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
-	lx2 = (int16_t)(((int)lx2 << SIGNSHIFT) >> SIGNSHIFT);
-	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
-	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
-	ly2 = (int16_t)(((int)ly2 << SIGNSHIFT) >> SIGNSHIFT);
+	lx0 = (int16_t)(((int32_t)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int32_t)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	lx2 = (int16_t)(((int32_t)lx2 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int32_t)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int32_t)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly2 = (int16_t)(((int32_t)ly2 << SIGNSHIFT) >> SIGNSHIFT);
 
 	if (CheckCoord3())
 		return true;
@@ -457,14 +457,14 @@ static bool offset4(void)
 	if (bDisplayNotSet)
 		SetOGLDisplaySettings(1);
 
-	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
-	lx1 = (int16_t)(((int)lx1 << SIGNSHIFT) >> SIGNSHIFT);
-	lx2 = (int16_t)(((int)lx2 << SIGNSHIFT) >> SIGNSHIFT);
-	lx3 = (int16_t)(((int)lx3 << SIGNSHIFT) >> SIGNSHIFT);
-	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
-	ly1 = (int16_t)(((int)ly1 << SIGNSHIFT) >> SIGNSHIFT);
-	ly2 = (int16_t)(((int)ly2 << SIGNSHIFT) >> SIGNSHIFT);
-	ly3 = (int16_t)(((int)ly3 << SIGNSHIFT) >> SIGNSHIFT);
+	lx0 = (int16_t)(((int32_t)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx1 = (int16_t)(((int32_t)lx1 << SIGNSHIFT) >> SIGNSHIFT);
+	lx2 = (int16_t)(((int32_t)lx2 << SIGNSHIFT) >> SIGNSHIFT);
+	lx3 = (int16_t)(((int32_t)lx3 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int32_t)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly1 = (int16_t)(((int32_t)ly1 << SIGNSHIFT) >> SIGNSHIFT);
+	ly2 = (int16_t)(((int32_t)ly2 << SIGNSHIFT) >> SIGNSHIFT);
+	ly3 = (int16_t)(((int32_t)ly3 << SIGNSHIFT) >> SIGNSHIFT);
 
 	if (CheckCoord4())
 		return true;
@@ -498,8 +498,8 @@ static void offsetST(void)
 	if (bDisplayNotSet)
 		SetOGLDisplaySettings(1);
 
-	lx0 = (int16_t)(((int)lx0 << SIGNSHIFT) >> SIGNSHIFT);
-	ly0 = (int16_t)(((int)ly0 << SIGNSHIFT) >> SIGNSHIFT);
+	lx0 = (int16_t)(((int32_t)lx0 << SIGNSHIFT) >> SIGNSHIFT);
+	ly0 = (int16_t)(((int32_t)ly0 << SIGNSHIFT) >> SIGNSHIFT);
 
 	if (lx0 < -512 && PSXDisplay.DrawOffset.x <= -512)
 		lx0 += 2048;
@@ -522,14 +522,14 @@ static void offsetST(void)
 	vertex[3].y = ly3 + PSXDisplay.CumulOffset.y;
 }
 
-static void offsetScreenUpload(int Position)
+static void offsetScreenUpload(int32_t Position)
 {
 	if (bDisplayNotSet)
 		SetOGLDisplaySettings(1);
 
 	if (Position == -1)
 	{
-		int lmdx, lmdy;
+		int32_t lmdx, lmdy;
 
 		lmdx = xrUploadArea.x0;
 		lmdy = xrUploadArea.y0;
@@ -778,7 +778,7 @@ static uint16_t BGR24to16(uint32_t BGR)
 // OpenGL primitive drawing commands
 ////////////////////////////////////////////////////////////////////////
 
-static __inline void PRIMdrawMain(GLenum mode, int howMany, bool enableColor, bool enableVertex, bool enableTextureCoord, OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
+static __inline void PRIMdrawMain(GLenum mode, int32_t howMany, bool enableColor, bool enableVertex, bool enableTextureCoord, OGLVertex *vertex1, OGLVertex *vertex2, OGLVertex *vertex3, OGLVertex *vertex4)
 {
 	if (enableColor)
 		glEnableClientState(GL_COLOR_ARRAY);
@@ -945,7 +945,7 @@ static SemiTransParams MultiColTransSets[4] = {{GL_ONE_MINUS_SRC_ALPHA, GL_SRC_A
 
 ////////////////////////////////////////////////////////////////////////
 
-static void SetSemiTransMulti(int Pass)
+static void SetSemiTransMulti(int32_t Pass)
 {
 	static GLenum bm1 = GL_ZERO;
 	static GLenum bm2 = GL_ONE;
@@ -1424,7 +1424,7 @@ bool CheckAgainstFrontScreen(int16_t imageX0, int16_t imageY0, int16_t imageX1, 
 
 ////////////////////////////////////////////////////////////////////////
 
-void PrepareFullScreenUpload(int Position)
+void PrepareFullScreenUpload(int32_t Position)
 {
 	if (Position == -1) // rgb24
 	{
@@ -1505,7 +1505,7 @@ void PrepareFullScreenUpload(int Position)
 
 ////////////////////////////////////////////////////////////////////////
 
-void UploadScreen(int Position)
+void UploadScreen(int32_t Position)
 {
 	int16_t x, y, YStep, XStep, U, s, UStep, ux[4], vy[4];
 	int16_t xa, xb, ya, yb;
@@ -1787,7 +1787,7 @@ static void cmdTextureWindow(uint8_t *baseAddr)
 // Check draw area dimensions
 ////////////////////////////////////////////////////////////////////////
 
-static void ClampToPSXScreen(int16_t *x0, int16_t *y0, int16_t *x1, int16_t *y1)
+static void ClampToPSXScreen(int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
 {
 	if (*x0 < 0)
 		*x0 = 0;
@@ -1814,7 +1814,7 @@ static void ClampToPSXScreen(int16_t *x0, int16_t *y0, int16_t *x1, int16_t *y1)
 // Used in Load Image and Blk Fill
 ////////////////////////////////////////////////////////////////////////
 
-static void ClampToPSXScreenOffset(int16_t *x0, int16_t *y0, int16_t *x1, int16_t *y1)
+static void ClampToPSXScreenOffset(int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
 {
 	if (*x0 < 0)
 	{
@@ -1940,8 +1940,8 @@ static void cmdDrawOffset(uint8_t *baseAddr)
 		PSXDisplay.DrawOffset.y = (int16_t)((gdata >> 11) & 0x7ff);
 	}
 
-	PSXDisplay.DrawOffset.x = (int16_t)(((int)PSXDisplay.DrawOffset.x << 21) >> 21);
-	PSXDisplay.DrawOffset.y = (int16_t)(((int)PSXDisplay.DrawOffset.y << 21) >> 21);
+	PSXDisplay.DrawOffset.x = (int16_t)(((int32_t)PSXDisplay.DrawOffset.x << 21) >> 21);
+	PSXDisplay.DrawOffset.y = (int16_t)(((int32_t)PSXDisplay.DrawOffset.y << 21) >> 21);
 
 	PSXDisplay.CumulOffset.x = // new OGL prim offsets
 	    PSXDisplay.DrawOffset.x - PSXDisplay.GDrawOffset.x + PreviousPSXDisplay.Range.x0;
@@ -2017,7 +2017,7 @@ static void PrepareRGB24Upload(void)
 
 void CheckWriteUpdate()
 {
-	int iX = 0, iY = 0;
+	int32_t iX = 0, iY = 0;
 
 	if (VRAMWrite.Width)
 		iX = 1;
@@ -2238,7 +2238,7 @@ static void primBlkFill(uint8_t *baseAddr)
 static void MoveImageWrapped(int16_t imageX0, int16_t imageY0, int16_t imageX1, int16_t imageY1, int16_t imageSX,
                              int16_t imageSY)
 {
-	int i, j, imageXE, imageYE;
+	int32_t i, j, imageXE, imageYE;
 
 	if (iFrameReadType & 2)
 	{
@@ -2359,7 +2359,7 @@ static void primMoveImage(uint8_t *baseAddr)
 	{
 		uint32_t *SRCPtr, *DSTPtr;
 		uint16_t LineOffset;
-		int dx = imageSX >> 1;
+		int32_t dx = imageSX >> 1;
 
 		SRCPtr = (uint32_t *)(psxVuw + (1024 * imageY0) + imageX0);
 		DSTPtr = (uint32_t *)(psxVuw + (1024 * imageY1) + imageX1);
@@ -2476,11 +2476,8 @@ static void primTileS(uint8_t *baseAddr)
 	offsetPSX4();
 	if (bDrawOffscreen4())
 	{
-		if (!(iTileCheat && sprtH == 32 && gpuData[0] == 0x60ffffff)) // special cheat for certain ZiNc games
-		{
-			InvalidateTextureAreaEx();
-			FillSoftwareAreaTrans(lx0, ly0, lx2, ly2, BGR24to16(gpuData[0]));
-		}
+		InvalidateTextureAreaEx();
+		FillSoftwareAreaTrans(lx0, ly0, lx2, ly2, BGR24to16(gpuData[0]));
 	}
 
 	SetRenderMode(gpuData[0], false);
@@ -2730,10 +2727,10 @@ static void primSprt8(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iSpriteTex = 0;
@@ -2842,10 +2839,10 @@ static void primSprt16(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iSpriteTex = 0;
@@ -3010,10 +3007,10 @@ static void primSprtSRest(uint8_t *baseAddr, uint16_t type)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	if (sTypeRest && type < 4)
@@ -3145,10 +3142,10 @@ static void primSprtS(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[2], &vertex[3]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	if (sTypeRest)
@@ -3427,9 +3424,9 @@ static bool DoLineCheck(uint32_t *)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[3], &vertex[2]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iDrawnSomething = 1;
@@ -3494,9 +3491,9 @@ static void primPolyFT3(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 		PRIMdrawTexturedTri(&vertex[0], &vertex[1], &vertex[2]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iDrawnSomething = 1;
@@ -3508,8 +3505,8 @@ static void primPolyFT3(uint8_t *baseAddr)
 
 static void RectTexAlign(void)
 {
-	int UFlipped = false;
-	int VFlipped = false;
+	int32_t UFlipped = false;
+	int32_t VFlipped = false;
 
 	if (gTexName == gTexFrameName)
 		return;
@@ -3792,10 +3789,10 @@ static void primPolyFT4(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 
 		PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[3], &vertex[2]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iDrawnSomething = 1;
@@ -3856,9 +3853,9 @@ static void primPolyGT3(uint8_t *baseAddr)
 
 		if (ubOpaqueDraw)
 		{
-			DEFOPAQUEON
+			DEFOPAQUEON();
 			PRIMdrawTexturedTri(&vertex[0], &vertex[1], &vertex[2]);
-			DEFOPAQUEOFF
+			DEFOPAQUEOFF();
 		}
 		return;
 	}
@@ -3879,9 +3876,9 @@ static void primPolyGT3(uint8_t *baseAddr)
 
 	if (ubOpaqueDraw)
 	{
-		DEFOPAQUEON
+		DEFOPAQUEON();
 		PRIMdrawTexGouraudTriColor(&vertex[0], &vertex[1], &vertex[2]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iDrawnSomething = 1;
@@ -3991,9 +3988,9 @@ static void primPolyGT4(uint8_t *baseAddr)
 		if (ubOpaqueDraw)
 		{
 			ubGloAlpha = ubGloColAlpha = 0xff;
-			DEFOPAQUEON
+			DEFOPAQUEON();
 			PRIMdrawTexturedQuad(&vertex[0], &vertex[1], &vertex[3], &vertex[2]);
-			DEFOPAQUEOFF
+			DEFOPAQUEOFF();
 		}
 		return;
 	}
@@ -4016,9 +4013,9 @@ static void primPolyGT4(uint8_t *baseAddr)
 	if (ubOpaqueDraw)
 	{
 		ubGloAlpha = ubGloColAlpha = 0xff;
-		DEFOPAQUEON
+		DEFOPAQUEON();
 		PRIMdrawTexGouraudTriColorQuad(&vertex[0], &vertex[1], &vertex[3], &vertex[2]);
-		DEFOPAQUEOFF
+		DEFOPAQUEOFF();
 	}
 
 	iDrawnSomething = 1;
@@ -4072,9 +4069,9 @@ static void primPolyF3(uint8_t *baseAddr)
 static void primLineGEx(uint8_t *baseAddr)
 {
 	uint32_t *gpuData = ((uint32_t *)baseAddr);
-	int iMax = 255;
+	int32_t iMax = 255;
 	int16_t cx0, cx1, cy0, cy1;
-	int i;
+	int32_t i;
 	bool bDraw = true;
 
 	bDrawTextured = false;
@@ -4189,9 +4186,9 @@ static void primLineG2(uint8_t *baseAddr)
 static void primLineFEx(uint8_t *baseAddr)
 {
 	uint32_t *gpuData = ((uint32_t *)baseAddr);
-	int iMax;
+	int32_t iMax;
 	int16_t cx0, cx1, cy0, cy1;
-	int i;
+	int32_t i;
 
 	iMax = 255;
 

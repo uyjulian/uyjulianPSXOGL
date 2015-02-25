@@ -7,6 +7,10 @@
 #include <string.h>
 //#define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
+#include <glm/fwd.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <math.h>
 
 #define __inline inline
@@ -44,11 +48,11 @@
 	((pr1)->left == (pr2)->left && (pr1)->top == (pr2)->top && (pr1)->right == (pr2)->right &&                         \
 	 (pr1)->bottom == (pr2)->bottom)
 
-#define DEFOPAQUEON                                                                                                    \
-	glAlphaFunc(GL_EQUAL, 0.0f);                                                                                       \
+#define DEFOPAQUEON()                                                                                                    \
+	{glAlphaFunc(GL_EQUAL, 0.0f);                                                                                       \
 	bBlendEnable = false;                                                                                              \
-	glDisable(GL_BLEND);
-#define DEFOPAQUEOFF glAlphaFunc(GL_GREATER, 0.49f);
+	glDisable(GL_BLEND);}
+#define DEFOPAQUEOFF() glAlphaFunc(GL_GREATER, 0.49f)
 
 #define INFO_TW 0
 #define INFO_DRAWSTART 1
@@ -106,10 +110,10 @@
 
 typedef struct RECTTAG
 {
-	int left;
-	int top;
-	int right;
-	int bottom;
+	int32_t left;
+	int32_t top;
+	int32_t right;
+	int32_t bottom;
 } RECT;
 
 typedef struct VRAMLOADTAG
@@ -125,22 +129,22 @@ typedef struct VRAMLOADTAG
 
 typedef struct PSXPOINTTAG
 {
-	int x;
-	int y;
+	int32_t x;
+	int32_t y;
 } PSXPoint_t;
 
 typedef struct PSXSPOINTTAG
 {
-	int16_t x;
-	int16_t y;
+	int32_t x;
+	int32_t y;
 } PSXSPoint_t;
 
 typedef struct PSXRECTTAG
 {
-	int16_t x0;
-	int16_t x1;
-	int16_t y0;
-	int16_t y1;
+	int32_t x0;
+	int32_t x1;
+	int32_t y0;
+	int32_t y1;
 } PSXRect_t;
 
 typedef struct TWINTAG
@@ -159,19 +163,19 @@ typedef struct PSXDISPLAYTAG
 	PSXPoint_t DisplayPosition;
 	PSXPoint_t DisplayEnd;
 
-	int Double;
-	int Height;
-	int PAL;
-	int InterlacedNew;
-	int Interlaced;
-	int InterlacedTest;
-	int RGB24New;
-	int RGB24;
+	int32_t Double;
+	int32_t Height;
+	int32_t PAL;
+	int32_t InterlacedNew;
+	int32_t Interlaced;
+	int32_t InterlacedTest;
+	int32_t RGB24New;
+	int32_t RGB24;
 	PSXSPoint_t DrawOffset;
 	PSXRect_t DrawArea;
 	PSXPoint_t GDrawOffset;
 	PSXPoint_t CumulOffset;
-	int Disabled;
+	int32_t Disabled;
 	PSXRect_t Range;
 } PSXDisplay_t;
 
@@ -214,16 +218,17 @@ typedef struct GPUFREEZETAG
 	uint8_t psxVRam[1024 * 1024 * 2]; // current VRam image (full 2 MB for ZN)
 } GPUFreeze_t;
 
-extern int iResX;
-extern int iResY;
+extern int32_t iResX;
+extern int32_t iResY;
 
 extern uint8_t gl_ux[8];
 extern uint8_t gl_vy[8];
 extern OGLVertex vertex[4];
-extern int16_t sprtY, sprtX, sprtH, sprtW;
+extern int32_t sprtY, sprtX, sprtH, sprtW;
+extern glm::mat4 projectionMatrix;
 
-extern int GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
-extern int GlobalTextREST, GlobalTextABR;
+extern int32_t GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
+extern int32_t GlobalTextREST, GlobalTextABR;
 extern int16_t ly0, lx0, ly1, lx1, ly2, lx2, ly3, lx3;
 extern int16_t g_m1;
 extern int16_t g_m2;
@@ -245,52 +250,49 @@ extern GLubyte ubGloAlpha;
 extern bool bRenderFrontBuffer;
 extern void (*primTableJ[256])(uint8_t *);
 extern uint16_t usMirror;
-extern int iSpriteTex;
-extern int iDrawnSomething;
+extern int32_t iSpriteTex;
+extern int32_t iDrawnSomething;
 
-extern int drawX;
-extern int drawY;
-extern int drawW;
-extern int drawH;
+extern int32_t drawX;
+extern int32_t drawY;
+extern int32_t drawW;
+extern int32_t drawH;
 extern int16_t sxmin;
 extern int16_t sxmax;
 extern int16_t symin;
 extern int16_t symax;
 
 extern uint8_t ubOpaqueDraw;
-extern void (*LoadSubTexFn)(int, int, int16_t, int16_t);
-extern int GlobalTexturePage;
+extern void (*LoadSubTexFn)(int32_t, int32_t, int16_t, int16_t);
+extern int32_t GlobalTexturePage;
 extern uint32_t (*TCF[])(uint32_t);
-extern int iFrameReadType;
+extern int32_t iFrameReadType;
 extern bool bFakeFrontBuffer;
 extern GLuint gTexFrameName;
 extern bool bIgnoreNextTile;
 
 extern VRAMLoad_t VRAMWrite;
 extern VRAMLoad_t VRAMRead;
-extern int iDataWriteMode;
-extern int iDataReadMode;
+extern int32_t iDataWriteMode;
+extern int32_t iDataReadMode;
 extern PSXDisplay_t PSXDisplay;
 extern PSXDisplay_t PreviousPSXDisplay;
 extern TWin_t TWin;
 extern bool bDisplayNotSet;
-extern int lGPUstatusRet;
-extern int16_t imageX0, imageX1;
-extern int16_t imageY0, imageY1;
-extern int lClearOnSwap, lClearOnSwapColor;
+extern int32_t lGPUstatusRet;
+extern int32_t lClearOnSwap, lClearOnSwapColor;
 extern uint8_t *psxVub;
 extern uint16_t *psxVuw;
 extern GLfloat gl_z;
 extern bool bNeedRGB24Update;
-extern int iLastRGB24;
+extern int32_t iLastRGB24;
 extern uint32_t ulGPUInfoVals[];
 extern bool bNeedInterlaceUpdate;
 extern bool bNeedWriteUpload;
 extern uint32_t dwGPUVersion;
-extern int iGPUHeight;
-extern int iGPUHeightMask;
-extern int GlobalTextIL;
-extern int iTileCheat;
+extern int32_t iGPUHeight;
+extern int32_t iGPUHeightMask;
+extern int32_t GlobalTextIL;
 
 // prototypes
 
@@ -303,13 +305,13 @@ extern "C" int32_t GPUinit(void);
 extern "C" int32_t GPUopen(uint32_t *, char *, char *);
 extern "C" int32_t GPUclose(void);
 extern "C" int32_t GPUshutdown(void);
-extern "C" void GPUcursor(int, int, int);
+extern "C" void GPUcursor(int32_t, int32_t, int32_t);
 extern "C" void GPUupdateLace(void);
 extern "C" uint32_t GPUreadStatus(void);
 extern "C" void GPUwriteStatus(uint32_t);
-extern "C" void GPUreadDataMem(uint32_t *, int);
+extern "C" void GPUreadDataMem(uint32_t *, int32_t);
 extern "C" uint32_t GPUreadData(void);
-extern "C" void GPUwriteDataMem(uint32_t *, int);
+extern "C" void GPUwriteDataMem(uint32_t *, int32_t);
 extern "C" int32_t GPUconfigure(void);
 extern "C" void GPUwriteData(uint32_t);
 extern "C" void GPUabout(void);
@@ -320,8 +322,8 @@ extern "C" void GPUgetScreenPic(uint8_t *);
 extern "C" void GPUshowScreenPic(uint8_t *);
 extern "C" void GPUsetfix(uint32_t);
 extern "C" void GPUvisualVibration(uint32_t, uint32_t);
-extern "C" void GPUvBlank(int);
-extern "C" void GPUhSync(int);
+extern "C" void GPUvBlank(int32_t);
+extern "C" void GPUhSync(int32_t);
 
 extern int32_t LoadPSE();
 extern int32_t OpenPSE();
@@ -330,31 +332,30 @@ extern int32_t ShutdownPSE();
 extern void UpdateLacePSE();
 extern uint32_t ReadStatusPSE();
 extern void WriteStatusPSE(uint32_t);
-extern void ReadDataMemPSE(uint32_t *, int);
+extern void ReadDataMemPSE(uint32_t *, int32_t);
 extern uint32_t ReadDataPSE();
-extern void WriteDataMemPSE(uint32_t *, int);
+extern void WriteDataMemPSE(uint32_t *, int32_t);
 extern void WriteDataPSE(uint32_t);
 extern int32_t DmaChainPSE(uint32_t *, uint32_t);
 extern int32_t FreezePSE(uint32_t, GPUFreeze_t *);
-extern void VBlankPSE(int);
-extern void HSyncPSE(int);
+extern void VBlankPSE(int32_t);
+extern void HSyncPSE(int32_t);
 
-extern void clearWithColor(int);
+extern void clearWithColor(int32_t);
 extern void clearToBlack(void);
 
-extern int GLinitialize(void);
-extern int GLrefresh(void);
+extern int32_t GLinitialize(void);
 extern void GLcleanup(void);
 extern void SetOGLDisplaySettings(bool);
 extern void SetExtGLFuncs(void);
 
 extern void updateDisplay(void);
 extern void updateFrontDisplay(void);
-extern void CheckVRamRead(int, int, int, int, bool);
-extern void CheckVRamReadEx(int, int, int, int);
+extern void CheckVRamRead(int32_t, int32_t, int32_t, int32_t, bool);
+extern void CheckVRamReadEx(int32_t, int32_t, int32_t, int32_t);
 
-extern void UploadScreen(int);
-extern void PrepareFullScreenUpload(int);
+extern void UploadScreen(int32_t);
+extern void PrepareFullScreenUpload(int32_t);
 extern bool CheckAgainstScreen(int16_t, int16_t, int16_t, int16_t);
 extern bool CheckAgainstFrontScreen(int16_t, int16_t, int16_t, int16_t);
 extern bool FastCheckAgainstScreen(int16_t, int16_t, int16_t, int16_t);
@@ -363,32 +364,32 @@ extern void CheckWriteUpdate(void);
 
 extern void FillSoftwareAreaTrans(int16_t, int16_t, int16_t, int16_t, uint16_t);
 extern void FillSoftwareArea(int16_t, int16_t, int16_t, int16_t, uint16_t);
-extern void drawPoly3G(int, int, int);
-extern void drawPoly4G(int, int, int, int);
-extern void drawPoly3F(int);
-extern void drawPoly4F(int);
+extern void drawPoly3G(int32_t, int32_t, int32_t);
+extern void drawPoly4G(int32_t, int32_t, int32_t, int32_t);
+extern void drawPoly3F(int32_t);
+extern void drawPoly4F(int32_t);
 extern void drawPoly4FT(uint8_t *);
 extern void drawPoly4GT(uint8_t *);
 extern void drawPoly3FT(uint8_t *);
 extern void drawPoly3GT(uint8_t *);
-extern void DrawSoftwareSprite(uint8_t *, int16_t, int16_t, int, int);
-extern void DrawSoftwareSpriteTWin(uint8_t *, int, int);
-extern void DrawSoftwareSpriteMirror(uint8_t *, int, int);
+extern void DrawSoftwareSprite(uint8_t *, int16_t, int16_t, int32_t, int32_t);
+extern void DrawSoftwareSpriteTWin(uint8_t *, int32_t, int32_t);
+extern void DrawSoftwareSpriteMirror(uint8_t *, int32_t, int32_t);
 
 extern void InitializeTextureStore(void);
 extern void CleanupTextureStore(void);
-extern GLuint LoadTextureWnd(int, int, uint32_t);
+extern GLuint LoadTextureWnd(int32_t, int32_t, uint32_t);
 extern GLuint LoadTextureMovie(void);
-extern void InvalidateTextureArea(int, int, int, int);
+extern void InvalidateTextureArea(int32_t, int32_t, int32_t, int32_t);
 extern void InvalidateTextureAreaEx(void);
 extern void ResetTextureArea(bool);
-extern GLuint SelectSubTextureS(int, uint32_t);
+extern GLuint SelectSubTextureS(int32_t, uint32_t);
 extern void CheckTextureMemory(void);
 
-extern void LoadSubTexturePage(int, int, int16_t, int16_t);
-extern void LoadSubTexturePageSort(int, int, int16_t, int16_t);
-extern void LoadPackedSubTexturePage(int, int, int16_t, int16_t);
-extern void LoadPackedSubTexturePageSort(int, int, int16_t, int16_t);
+extern void LoadSubTexturePage(int32_t, int32_t, int16_t, int16_t);
+extern void LoadSubTexturePageSort(int32_t, int32_t, int16_t, int16_t);
+extern void LoadPackedSubTexturePage(int32_t, int32_t, int16_t, int16_t);
+extern void LoadPackedSubTexturePageSort(int32_t, int32_t, int16_t, int16_t);
 extern uint32_t XP8RGBA_0(uint32_t);
 extern uint32_t XP8RGBA_1(uint32_t);
 

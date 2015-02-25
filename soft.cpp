@@ -18,7 +18,7 @@
 
 #include "externals.h"
 
-static int iDither = 0;
+static int32_t iDither = 0;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // "NO EDGE BUFFER" POLY VERSION... FUNCS BASED ON FATMAP.TXT FROM MRI / Doomsday
@@ -64,8 +64,8 @@ static int16_t Ymin;
 static int16_t Ymax;
 
 int16_t ly0, lx0, ly1, lx1, ly2, lx2, ly3, lx3; // global psx vertex coords
-int GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
-int GlobalTextREST, GlobalTextABR;
+int32_t GlobalTextAddrX, GlobalTextAddrY, GlobalTextTP;
+int32_t GlobalTextREST, GlobalTextABR;
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ static void Dither16(uint16_t *pdest, uint32_t r, uint32_t g, uint32_t b, uint16
 {
 	uint8_t coeff;
 	uint8_t rlow, glow, blow;
-	int x, y;
+	int32_t x, y;
 
 	x = pdest - psxVuw;
 	y = x >> 10;
@@ -109,9 +109,9 @@ static void Dither16(uint16_t *pdest, uint32_t r, uint32_t g, uint32_t b, uint16
 
 /////////////////////////////////////////////////////////////////
 
-static __inline void GetShadeTransCol_Dither(uint16_t *pdest, int m1, int m2, int m3)
+static __inline void GetShadeTransCol_Dither(uint16_t *pdest, int32_t m1, int32_t m2, int32_t m3)
 {
-	int r, g, b;
+	int32_t r, g, b;
 
 	if (DrawSemiTrans)
 	{
@@ -173,7 +173,7 @@ static __inline void GetShadeTransCol(uint16_t *pdest, uint16_t color)
 {
 	if (DrawSemiTrans)
 	{
-		int r, g, b;
+		int32_t r, g, b;
 
 		if (GlobalTextABR == 0)
 		{
@@ -229,7 +229,7 @@ static __inline void GetShadeTransCol32(uint32_t *pdest, uint32_t color)
 {
 	if (DrawSemiTrans)
 	{
-		int r, g, b;
+		int32_t r, g, b;
 
 		if (GlobalTextABR == 0)
 		{
@@ -247,7 +247,7 @@ static __inline void GetShadeTransCol32(uint32_t *pdest, uint32_t color)
 		}
 		else if (GlobalTextABR == 2)
 		{
-			int sr, sb, sg, src, sbc, sgc, c;
+			int32_t sr, sb, sg, src, sbc, sgc, c;
 			src = XCOL1(color);
 			sbc = XCOL2(color);
 			sgc = XCOL3(color);
@@ -261,9 +261,9 @@ static __inline void GetShadeTransCol32(uint32_t *pdest, uint32_t color)
 			sg = (XCOL3(c)) - sgc;
 			if (sg & 0x8000)
 				sg = 0;
-			r = ((int)sr) << 16;
-			b = ((int)sb) << 11;
-			g = ((int)sg) << 6;
+			r = ((int32_t)sr) << 16;
+			b = ((int32_t)sb) << 11;
+			g = ((int32_t)sg) << 6;
 			c = LOWORD(*pdest);
 			sr = (XCOL1(c)) - src;
 			if (sr & 0x8000)
@@ -309,7 +309,7 @@ static __inline void GetShadeTransCol32(uint32_t *pdest, uint32_t color)
 
 static __inline void GetTextureTransColG(uint16_t *pdest, uint16_t color)
 {
-	int r, g, b;
+	int32_t r, g, b;
 	uint16_t l;
 
 	if (color == 0)
@@ -380,7 +380,7 @@ static __inline void GetTextureTransColG(uint16_t *pdest, uint16_t color)
 
 static __inline void GetTextureTransColG_SPR(uint16_t *pdest, uint16_t color)
 {
-	int r, g, b;
+	int32_t r, g, b;
 	uint16_t l;
 
 	if (color == 0)
@@ -451,7 +451,7 @@ static __inline void GetTextureTransColG_SPR(uint16_t *pdest, uint16_t color)
 
 static __inline void GetTextureTransColG32(uint32_t *pdest, uint32_t color)
 {
-	int r, g, b, l;
+	int32_t r, g, b, l;
 
 	if (color == 0)
 		return;
@@ -474,7 +474,7 @@ static __inline void GetTextureTransColG32(uint32_t *pdest, uint32_t color)
 		}
 		else if (GlobalTextABR == 2)
 		{
-			int t;
+			int32_t t;
 			r = (((((X32COL1(color))) * g_m1) & 0xFF80FF80) >> 7);
 			t = (*pdest & 0x001f0000) - (r & 0x003f0000);
 			if (t & 0x80000000)
@@ -560,7 +560,7 @@ static __inline void GetTextureTransColG32(uint32_t *pdest, uint32_t color)
 
 static __inline void GetTextureTransColG32_SPR(uint32_t *pdest, uint32_t color)
 {
-	int r, g, b;
+	int32_t r, g, b;
 
 	if (color == 0)
 		return;
@@ -581,7 +581,7 @@ static __inline void GetTextureTransColG32_SPR(uint32_t *pdest, uint32_t color)
 		}
 		else if (GlobalTextABR == 2)
 		{
-			int t;
+			int32_t t;
 			r = (((((X32COL1(color))) * g_m1) & 0xFF80FF80) >> 7);
 			t = (*pdest & 0x001f0000) - (r & 0x003f0000);
 			if (t & 0x80000000)
@@ -665,9 +665,9 @@ static __inline void GetTextureTransColG32_SPR(uint32_t *pdest, uint32_t color)
 
 ////////////////////////////////////////////////////////////////////////
 
-static __inline void GetTextureTransColGX_Dither(uint16_t *pdest, uint16_t color, int m1, int m2, int m3)
+static __inline void GetTextureTransColGX_Dither(uint16_t *pdest, uint16_t color, int32_t m1, int32_t m2, int32_t m3)
 {
-	int r, g, b;
+	int32_t r, g, b;
 
 	if (color == 0)
 		return;
@@ -734,7 +734,7 @@ static __inline void GetTextureTransColGX_Dither(uint16_t *pdest, uint16_t color
 
 static __inline void GetTextureTransColGX(uint16_t *pdest, uint16_t color, int16_t m1, int16_t m2, int16_t m3)
 {
-	int r, g, b;
+	int32_t r, g, b;
 	uint16_t l;
 
 	if (color == 0)
@@ -856,7 +856,7 @@ void FillSoftwareAreaTrans(int16_t x0, int16_t y0, int16_t x1, // FILL AREA TRAN
 		readdatamem 0x00008000 1
 		*/
 
-		static int iCheat = 0;
+		static int32_t iCheat = 0;
 		col += iCheat;
 		if (iCheat == 1)
 			iCheat = 0;
@@ -950,7 +950,7 @@ void FillSoftwareArea(int16_t x0, int16_t y0, int16_t x1, // FILL AREA (BLK FILL
 	{
 		uint32_t *DSTPtr;
 		uint16_t LineOffset;
-		uint32_t lcol = (((int)col) << 16) | col;
+		uint32_t lcol = (((int32_t)col) << 16) | col;
 		dx >>= 1;
 		DSTPtr = (uint32_t *)(psxVuw + (1024 * y0) + x0);
 		LineOffset = 512 - dx;
@@ -970,35 +970,35 @@ void FillSoftwareArea(int16_t x0, int16_t y0, int16_t x1, // FILL AREA (BLK FILL
 
 typedef struct SOFTVTAG
 {
-	int x, y;
-	int u, v;
-	int R, G, B;
+	int32_t x, y;
+	int32_t u, v;
+	int32_t R, G, B;
 } soft_vertex;
 
 static soft_vertex vtx[4];
 static soft_vertex *left_array[4], *right_array[4];
-static int left_section, right_section;
-static int left_section_height, right_section_height;
-static int left_x, delta_left_x, right_x, delta_right_x;
-static int left_u, delta_left_u, left_v, delta_left_v;
-static int right_u, delta_right_u, right_v, delta_right_v;
-static int left_R, delta_left_R, right_R, delta_right_R;
-static int left_G, delta_left_G, right_G, delta_right_G;
-static int left_B, delta_left_B, right_B, delta_right_B;
+static int32_t left_section, right_section;
+static int32_t left_section_height, right_section_height;
+static int32_t left_x, delta_left_x, right_x, delta_right_x;
+static int32_t left_u, delta_left_u, left_v, delta_left_v;
+static int32_t right_u, delta_right_u, right_v, delta_right_v;
+static int32_t left_R, delta_left_R, right_R, delta_right_R;
+static int32_t left_G, delta_left_G, right_G, delta_right_G;
+static int32_t left_B, delta_left_B, right_B, delta_right_B;
 
-static __inline int shl10idiv(int x, int y)
+static __inline int32_t shl10idiv(int32_t x, int32_t y)
 {
 	int64_t bi = x;
 	bi <<= 10;
-	return (int)(bi / y);
+	return (int32_t)(bi / y);
 }
 
-static __inline int RightSection_F(void)
+static __inline int32_t RightSection_F(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_right_x = (v2->x - v1->x) / height;
@@ -1008,12 +1008,12 @@ static __inline int RightSection_F(void)
 	return height;
 }
 
-static __inline int LeftSection_F(void)
+static __inline int32_t LeftSection_F(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_left_x = (v2->x - v1->x) / height;
@@ -1062,7 +1062,7 @@ static __inline bool NextRow_F(void)
 static __inline bool SetupSections_F(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3)
 {
 	soft_vertex *v1, *v2, *v3;
-	int height, longest;
+	int32_t height, longest;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -1149,12 +1149,12 @@ static __inline bool SetupSections_F(int16_t x1, int16_t y1, int16_t x2, int16_t
 	return true;
 }
 
-static __inline int RightSection_G(void)
+static __inline int32_t RightSection_G(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_right_x = (v2->x - v1->x) / height;
@@ -1164,12 +1164,12 @@ static __inline int RightSection_G(void)
 	return height;
 }
 
-static __inline int LeftSection_G(void)
+static __inline int32_t LeftSection_G(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_left_x = (v2->x - v1->x) / height;
@@ -1225,11 +1225,11 @@ static __inline bool NextRow_G(void)
 	return false;
 }
 
-static __inline bool SetupSections_G(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int rgb1,
-                                     int rgb2, int rgb3)
+static __inline bool SetupSections_G(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int32_t rgb1,
+                                     int32_t rgb2, int32_t rgb3)
 {
 	soft_vertex *v1, *v2, *v3;
-	int height, longest, temp;
+	int32_t height, longest, temp;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -1334,12 +1334,12 @@ static __inline bool SetupSections_G(int16_t x1, int16_t y1, int16_t x2, int16_t
 	return true;
 }
 
-static __inline int RightSection_FT(void)
+static __inline int32_t RightSection_FT(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_right_x = (v2->x - v1->x) / height;
@@ -1349,12 +1349,12 @@ static __inline int RightSection_FT(void)
 	return height;
 }
 
-static __inline int LeftSection_FT(void)
+static __inline int32_t LeftSection_FT(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_left_x = (v2->x - v1->x) / height;
@@ -1411,7 +1411,7 @@ static __inline bool SetupSections_FT(int16_t x1, int16_t y1, int16_t x2, int16_
                                       int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
 {
 	soft_vertex *v1, *v2, *v3;
-	int height, longest, temp;
+	int32_t height, longest, temp;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -1514,12 +1514,12 @@ static __inline bool SetupSections_FT(int16_t x1, int16_t y1, int16_t x2, int16_
 	return true;
 }
 
-static __inline int RightSection_GT(void)
+static __inline int32_t RightSection_GT(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_right_x = (v2->x - v1->x) / height;
@@ -1529,12 +1529,12 @@ static __inline int RightSection_GT(void)
 	return height;
 }
 
-static __inline int LeftSection_GT(void)
+static __inline int32_t LeftSection_GT(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	if (height == 0)
 		return 0;
 	delta_left_x = (v2->x - v1->x) / height;
@@ -1599,10 +1599,10 @@ static __inline bool NextRow_GT(void)
 
 static __inline bool SetupSections_GT(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3,
                                       int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                                      int rgb1, int rgb2, int rgb3)
+                                      int32_t rgb1, int32_t rgb2, int32_t rgb3)
 {
 	soft_vertex *v1, *v2, *v3;
-	int height, longest, temp;
+	int32_t height, longest, temp;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -1735,12 +1735,12 @@ static __inline bool SetupSections_GT(int16_t x1, int16_t y1, int16_t x2, int16_
 	return true;
 }
 
-static __inline int RightSection_F4(void)
+static __inline int32_t RightSection_F4(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	right_section_height = height;
 	right_x = v1->x;
 	if (height == 0)
@@ -1752,12 +1752,12 @@ static __inline int RightSection_F4(void)
 	return height;
 }
 
-static __inline int LeftSection_F4(void)
+static __inline int32_t LeftSection_F4(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	left_section_height = height;
 	left_x = v1->x;
 	if (height == 0)
@@ -1805,7 +1805,7 @@ static __inline bool SetupSections_F4(int16_t x1, int16_t y1, int16_t x2, int16_
                                       int16_t x4, int16_t y4)
 {
 	soft_vertex *v1, *v2, *v3, *v4;
-	int height, width, longest1, longest2;
+	int32_t height, width, longest1, longest2;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -1991,12 +1991,12 @@ static __inline bool SetupSections_F4(int16_t x1, int16_t y1, int16_t x2, int16_
 	return true;
 }
 
-static __inline int RightSection_FT4(void)
+static __inline int32_t RightSection_FT4(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	right_section_height = height;
 	right_x = v1->x;
 	right_u = v1->u;
@@ -2012,12 +2012,12 @@ static __inline int RightSection_FT4(void)
 	return height;
 }
 
-static __inline int LeftSection_FT4(void)
+static __inline int32_t LeftSection_FT4(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	left_section_height = height;
 	left_x = v1->x;
 	left_u = v1->u;
@@ -2074,7 +2074,7 @@ static __inline bool SetupSections_FT4(int16_t x1, int16_t y1, int16_t x2, int16
                                        int16_t tx3, int16_t ty3, int16_t tx4, int16_t ty4)
 {
 	soft_vertex *v1, *v2, *v3, *v4;
-	int height, width, longest1, longest2;
+	int32_t height, width, longest1, longest2;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -2271,12 +2271,12 @@ static __inline bool SetupSections_FT4(int16_t x1, int16_t y1, int16_t x2, int16
 	return true;
 }
 
-static __inline int RightSection_GT4(void)
+static __inline int32_t RightSection_GT4(void)
 {
 	soft_vertex *v1 = right_array[right_section];
 	soft_vertex *v2 = right_array[right_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	right_section_height = height;
 	right_x = v1->x;
 	right_u = v1->u;
@@ -2299,12 +2299,12 @@ static __inline int RightSection_GT4(void)
 	return height;
 }
 
-static __inline int LeftSection_GT4(void)
+static __inline int32_t LeftSection_GT4(void)
 {
 	soft_vertex *v1 = left_array[left_section];
 	soft_vertex *v2 = left_array[left_section - 1];
 
-	int height = v2->y - v1->y;
+	int32_t height = v2->y - v1->y;
 	left_section_height = height;
 	left_x = v1->x;
 	left_u = v1->u;
@@ -2371,11 +2371,11 @@ static __inline bool NextRow_GT4(void)
 
 static __inline bool SetupSections_GT4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3,
                                        int16_t x4, int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2,
-                                       int16_t tx3, int16_t ty3, int16_t tx4, int16_t ty4, int rgb1, int rgb2, int rgb3,
-                                       int rgb4)
+                                       int16_t tx3, int16_t ty3, int16_t tx4, int16_t ty4, int32_t rgb1, int32_t rgb2, int32_t rgb3,
+                                       int32_t rgb4)
 {
 	soft_vertex *v1, *v2, *v3, *v4;
-	int height, width, longest1, longest2;
+	int32_t height, width, longest1, longest2;
 
 	v1 = vtx;
 	v1->x = x1 << 16;
@@ -2592,9 +2592,9 @@ static __inline bool SetupSections_GT4(int16_t x1, int16_t y1, int16_t x2, int16
 // POLY 3/4 FLAT SHADED
 ////////////////////////////////////////////////////////////////////////
 
-static __inline void drawPoly3Fi(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int rgb)
+static __inline void drawPoly3Fi(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int32_t rgb)
 {
-	int i, j, xmin, xmax, ymin, ymax;
+	int32_t i, j, xmin, xmax, ymin, ymax;
 	uint16_t color;
 	uint32_t lcolor;
 
@@ -2646,16 +2646,16 @@ static __inline void drawPoly3Fi(int16_t x1, int16_t y1, int16_t x2, int16_t y2,
 
 ////////////////////////////////////////////////////////////////////////
 
-void drawPoly3F(int rgb)
+void drawPoly3F(int32_t rgb)
 {
 	drawPoly3Fi(lx0, ly0, lx1, ly1, lx2, ly2, rgb);
 }
 
 // more exact:
 
-void drawPoly4F(int rgb)
+void drawPoly4F(int32_t rgb)
 {
-	int i, j, xmin, xmax, ymin, ymax;
+	int32_t i, j, xmin, xmax, ymin, ymax;
 	uint16_t color;
 	uint32_t lcolor;
 
@@ -2712,10 +2712,10 @@ void drawPoly4F(int rgb)
 static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                           int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, XAdjust;
-	int clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, XAdjust;
+	int32_t clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -2772,14 +2772,14 @@ static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 			for (j = xmin; j < xmax; j += 2)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				XAdjust = ((posX + difX) >> 16);
-				tC2 = psxVub[(((posY + difY) >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC2 = psxVub[(((posY + difY) >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC2 = (tC2 >> ((XAdjust & 1) << 2)) & 0xf;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 
 				posX += difX2;
 				posY += difY2;
@@ -2787,7 +2787,7 @@ static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 			if (j == xmax)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				GetTextureTransColG(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1]);
 			}
@@ -2804,10 +2804,10 @@ static void drawPoly3TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, XAdjust;
-	int clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, XAdjust;
+	int32_t clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -2880,7 +2880,7 @@ static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (psxVuw[(n_yi << 10) + YAdjust + n_xi] >> ((XAdjust & 0x03) << 2)) & 0x0f;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 
 				posX += difX2;
 				posY += difY2;
@@ -2910,10 +2910,10 @@ static void drawPoly3TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, XAdjust;
-	int clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, XAdjust;
+	int32_t clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -2978,7 +2978,7 @@ static void drawPoly3TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (tC2 >> ((XAdjust & 1) << 2)) & 0xf;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 
 				posX += difX2;
 				posY += difY2;
@@ -3006,10 +3006,10 @@ static void drawPoly4TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3070,21 +3070,21 @@ static void drawPoly4TEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 			for (j = xmin; j < xmax; j += 2)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				XAdjust = ((posX + difX) >> 16);
-				tC2 = psxVub[(((posY + difY) >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC2 = psxVub[(((posY + difY) >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC2 = (tC2 >> ((XAdjust & 1) << 2)) & 0xf;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
 			if (j == xmax)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				GetTextureTransColG(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1]);
 			}
@@ -3100,10 +3100,10 @@ static void drawPoly4TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3180,7 +3180,7 @@ static void drawPoly4TEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (psxVuw[(n_yi << 10) + YAdjust + n_xi] >> ((XAdjust & 0x03) << 2)) & 0x0f;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3207,10 +3207,10 @@ static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3279,7 +3279,7 @@ static void drawPoly4TEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (tC2 >> ((XAdjust & 1) << 2)) & 0xf;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3302,10 +3302,10 @@ static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
                                int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                                int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3374,7 +3374,7 @@ static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 				tC2 = (tC2 >> ((XAdjust & 1) << 2)) & 0xf;
 
 				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[(i << 10) + j],
-				                          psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                          psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3397,9 +3397,9 @@ static void drawPoly4TEx4_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                           int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -3455,17 +3455,17 @@ static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 			for (j = xmin; j < xmax; j += 2)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (posX >> 16)];
-				tC2 = psxVub[(((posY + difY) >> 5) & (int)0xFFFFF800) + YAdjust + ((posX + difX) >> 16)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (posX >> 16)];
+				tC2 = psxVub[(((posY + difY) >> 5) & (int32_t)0xFFFFF800) + YAdjust + ((posX + difX) >> 16)];
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
 
 			if (j == xmax)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (posX >> 16)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (posX >> 16)];
 				GetTextureTransColG(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1]);
 			}
 		}
@@ -3481,9 +3481,9 @@ static void drawPoly3TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -3554,7 +3554,7 @@ static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (psxVuw[(n_yi << 10) + YAdjust + n_xi] >> ((TXU & 0x01) << 3)) & 0xff;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3583,9 +3583,9 @@ static void drawPoly3TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 static void drawPoly3TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                              int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -3646,7 +3646,7 @@ static void drawPoly3TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = psxVub[((((posY + difY) >> 16) % TWin.Position.y1) << 11) + YAdjust +
 				             (((posX + difX) >> 16) % TWin.Position.x1)];
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3672,10 +3672,10 @@ static void drawPoly4TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
                           int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3735,16 +3735,16 @@ static void drawPoly4TEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_
 
 			for (j = xmin; j < xmax; j += 2)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (posX >> 16)];
-				tC2 = psxVub[(((posY + difY) >> 5) & (int)0xFFFFF800) + YAdjust + ((posX + difX) >> 16)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (posX >> 16)];
+				tC2 = psxVub[(((posY + difY) >> 5) & (int32_t)0xFFFFF800) + YAdjust + ((posX + difX) >> 16)];
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
 			if (j == xmax)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (posX >> 16)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (posX >> 16)];
 				GetTextureTransColG(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1]);
 			}
 		}
@@ -3759,10 +3759,10 @@ static void drawPoly4TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3837,7 +3837,7 @@ static void drawPoly4TEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = (psxVuw[(n_yi << 10) + YAdjust + n_xi] >> ((TXU & 0x01) << 3)) & 0xff;
 
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3862,10 +3862,10 @@ static void drawPoly4TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -3930,7 +3930,7 @@ static void drawPoly4TEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 				tC2 = psxVub[((((posY + difY) >> 16) % TWin.Position.y1) << 11) + YAdjust +
 				             (((posX + difX) >> 16) % TWin.Position.x1)];
 				GetTextureTransColG32((uint32_t *)&psxVuw[(i << 10) + j],
-				                      psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                      psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -3952,10 +3952,10 @@ static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
                                int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                                int16_t tx4, int16_t ty4, int16_t clX, int16_t clY)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY, YAdjust, clutP;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1, tC2;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -4020,7 +4020,7 @@ static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 				tC2 = psxVub[((((posY + difY) >> 16) % TWin.Position.y1) << 11) + YAdjust +
 				             (((posX + difX) >> 16) % TWin.Position.x1)];
 				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[(i << 10) + j],
-				                          psxVuw[clutP + tC1] | ((int)psxVuw[clutP + tC2]) << 16);
+				                          psxVuw[clutP + tC1] | ((int32_t)psxVuw[clutP + tC2]) << 16);
 				posX += difX2;
 				posY += difY2;
 			}
@@ -4043,9 +4043,9 @@ static void drawPoly4TEx8_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, i
 static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                         int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -4098,7 +4098,7 @@ static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
 			{
 				GetTextureTransColG32(
 				    (uint32_t *)&psxVuw[(i << 10) + j],
-				    (((int)psxVuw[((((posY + difY) >> 16) + GlobalTextAddrY) << 10) + ((posX + difX) >> 16) +
+				    (((int32_t)psxVuw[((((posY + difY) >> 16) + GlobalTextAddrY) << 10) + ((posX + difX) >> 16) +
 				                  GlobalTextAddrX])
 				     << 16) |
 				        psxVuw[(((posY >> 16) + GlobalTextAddrY) << 10) + ((posX) >> 16) + GlobalTextAddrX]);
@@ -4122,9 +4122,9 @@ static void drawPoly3TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
 static void drawPoly3TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -4177,7 +4177,7 @@ static void drawPoly3TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			{
 				GetTextureTransColG32(
 				    (uint32_t *)&psxVuw[(i << 10) + j],
-				    (((int)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
+				    (((int32_t)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
 				                   << 10) +
 				                  (((posX + difX) >> 16) % TWin.Position.x1) + GlobalTextAddrX + TWin.Position.x0])
 				     << 16) |
@@ -4208,10 +4208,10 @@ static void drawPoly4TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
                         int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
                         int16_t ty4)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
 		return;
@@ -4268,7 +4268,7 @@ static void drawPoly4TD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t 
 			{
 				GetTextureTransColG32(
 				    (uint32_t *)&psxVuw[(i << 10) + j],
-				    (((int)psxVuw[((((posY + difY) >> 16) + GlobalTextAddrY) << 10) + ((posX + difX) >> 16) +
+				    (((int32_t)psxVuw[((((posY + difY) >> 16) + GlobalTextAddrY) << 10) + ((posX + difX) >> 16) +
 				                  GlobalTextAddrX])
 				     << 16) |
 				        psxVuw[(((posY >> 16) + GlobalTextAddrY) << 10) + ((posX) >> 16) + GlobalTextAddrX]);
@@ -4291,10 +4291,10 @@ static void drawPoly4TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
                            int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                            int16_t tx4, int16_t ty4)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
 		return;
@@ -4351,7 +4351,7 @@ static void drawPoly4TD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			{
 				GetTextureTransColG32(
 				    (uint32_t *)&psxVuw[(i << 10) + j],
-				    (((int)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
+				    (((int32_t)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
 				                   << 10) +
 				                  (((posX + difX) >> 16) % TWin.Position.x1) + GlobalTextAddrX + TWin.Position.x0])
 				     << 16) |
@@ -4378,10 +4378,10 @@ static void drawPoly4TD_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
                              int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
                              int16_t tx4, int16_t ty4)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int difX, difY, difX2, difY2;
-	int posX, posY;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t difX, difY, difX2, difY2;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
 		return;
@@ -4438,7 +4438,7 @@ static void drawPoly4TD_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 			{
 				GetTextureTransColG32_SPR(
 				    (uint32_t *)&psxVuw[(i << 10) + j],
-				    (((int)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
+				    (((int32_t)psxVuw[(((((posY + difY) >> 16) % TWin.Position.y1) + GlobalTextAddrY + TWin.Position.y0)
 				                   << 10) +
 				                  (((posX + difX) >> 16) % TWin.Position.x1) + GlobalTextAddrX + TWin.Position.x0])
 				     << 16) |
@@ -4463,12 +4463,12 @@ static void drawPoly4TD_TW_S(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int
 // POLY 3/4 G-SHADED
 ////////////////////////////////////////////////////////////////////////
 
-static __inline void drawPoly3Gi(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int rgb1,
-                                 int rgb2, int rgb3)
+static __inline void drawPoly3Gi(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int32_t rgb1,
+                                 int32_t rgb2, int32_t rgb3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -4571,14 +4571,14 @@ static __inline void drawPoly3Gi(int16_t x1, int16_t y1, int16_t x2, int16_t y2,
 
 ////////////////////////////////////////////////////////////////////////
 
-void drawPoly3G(int rgb1, int rgb2, int rgb3)
+void drawPoly3G(int32_t rgb1, int32_t rgb2, int32_t rgb3)
 {
 	drawPoly3Gi(lx0, ly0, lx1, ly1, lx2, ly2, rgb1, rgb2, rgb3);
 }
 
 // draw two g-shaded tris for right psx shading emulation
 
-void drawPoly4G(int rgb1, int rgb2, int rgb3, int rgb4)
+void drawPoly4G(int32_t rgb1, int32_t rgb2, int32_t rgb3, int32_t rgb4)
 {
 	drawPoly3Gi(lx1, ly1, lx3, ly3, lx2, ly2, rgb2, rgb4, rgb3);
 	drawPoly3Gi(lx0, ly0, lx1, ly1, lx2, ly2, rgb1, rgb2, rgb3);
@@ -4590,13 +4590,13 @@ void drawPoly4G(int rgb1, int rgb2, int rgb3, int rgb4)
 
 static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                           int col1, int col2, int col3)
+                           int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -4662,7 +4662,7 @@ static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			for (j = xmin; j <= xmax; j++)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				if (iDither)
 					GetTextureTransColGX_Dither(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1], (cB1 >> 16), (cG1 >> 16),
@@ -4688,13 +4688,13 @@ static void drawPoly3TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                               int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                              int col1, int col2, int col3)
+                              int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -4791,13 +4791,13 @@ static void drawPoly3TGEx4_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                               int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                              int col1, int col2, int col3)
+                              int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -4895,8 +4895,8 @@ static void drawPoly3TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 static void drawPoly4TGEx4_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                                   int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3,
-                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2,
-                                  int col3, int col4)
+                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2,
+                                  int32_t col3, int32_t col4)
 {
 	drawPoly3TGEx4_IL(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx4_IL(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
@@ -4906,14 +4906,14 @@ static void drawPoly4TGEx4_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 
 static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                            int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
+                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2, int32_t col4, int32_t col3)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP, XAdjust;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP, XAdjust;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -4983,7 +4983,7 @@ static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 			for (j = xmin; j <= xmax; j++)
 			{
 				XAdjust = (posX >> 16);
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (XAdjust >> 1)];
 				tC1 = (tC1 >> ((XAdjust & 1) << 2)) & 0xf;
 				if (iDither)
 					GetTextureTransColGX_Dither(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1], (cB1 >> 16), (cG1 >> 16),
@@ -5007,8 +5007,8 @@ static void drawPoly4TGEx4(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 static void drawPoly4TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                               int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3,
-                              int col4)
+                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2, int32_t col3,
+                              int32_t col4)
 {
 	drawPoly3TGEx4_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 
@@ -5021,13 +5021,13 @@ static void drawPoly4TGEx4_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                           int col1, int col2, int col3)
+                           int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -5092,7 +5092,7 @@ static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 			for (j = xmin; j <= xmax; j++)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + ((posX >> 16))];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + ((posX >> 16))];
 				if (iDither)
 					GetTextureTransColGX_Dither(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1], (cB1 >> 16), (cG1 >> 16),
 					                            (cR1 >> 16));
@@ -5117,13 +5117,13 @@ static void drawPoly3TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                               int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                              int col1, int col2, int col3)
+                              int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax, n_xi, n_yi, TXV, TXU;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -5219,13 +5219,13 @@ static void drawPoly3TGEx8_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
                               int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t clX, int16_t clY,
-                              int col1, int col2, int col3)
+                              int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
@@ -5318,8 +5318,8 @@ static void drawPoly3TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 
 static void drawPoly4TGEx8_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                                   int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3,
-                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2,
-                                  int col3, int col4)
+                                  int16_t ty3, int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2,
+                                  int32_t col3, int32_t col4)
 {
 	drawPoly3TGEx8_IL(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx8_IL(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
@@ -5327,14 +5327,14 @@ static void drawPoly4TGEx8_TRI_IL(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 
 static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                            int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col4, int col3)
+                           int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2, int32_t col4, int32_t col3)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY, YAdjust, clutP;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY, YAdjust, clutP;
 	int16_t tC1;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
@@ -5403,7 +5403,7 @@ static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 			for (j = xmin; j <= xmax; j++)
 			{
-				tC1 = psxVub[((posY >> 5) & (int)0xFFFFF800) + YAdjust + (posX >> 16)];
+				tC1 = psxVub[((posY >> 5) & (int32_t)0xFFFFF800) + YAdjust + (posX >> 16)];
 				if (iDither)
 					GetTextureTransColGX_Dither(&psxVuw[(i << 10) + j], psxVuw[clutP + tC1], (cB1 >> 16), (cG1 >> 16),
 					                            (cR1 >> 16));
@@ -5426,8 +5426,8 @@ static void drawPoly4TGEx8(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16
 
 static void drawPoly4TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                               int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int col1, int col2, int col3,
-                              int col4)
+                              int16_t tx4, int16_t ty4, int16_t clX, int16_t clY, int32_t col1, int32_t col2, int32_t col3,
+                              int32_t col4)
 {
 	drawPoly3TGEx8_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, clX, clY, col2, col4, col3);
 	drawPoly3TGEx8_TW(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, clX, clY, col1, col2, col3);
@@ -5438,13 +5438,13 @@ static void drawPoly4TGEx8_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, in
 ////////////////////////////////////////////////////////////////////////
 
 static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
-                         int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2, int col3)
+                         int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int32_t col1, int32_t col2, int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -5531,14 +5531,14 @@ static void drawPoly3TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 ////////////////////////////////////////////////////////////////////////
 
 static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t tx1,
-                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int col1, int col2,
-                            int col3)
+                            int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int32_t col1, int32_t col2,
+                            int32_t col3)
 {
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW)
 		return;
@@ -5630,14 +5630,14 @@ static void drawPoly3TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int1
 
 static void drawPoly4TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4, int16_t y4,
                          int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3, int16_t tx4,
-                         int16_t ty4, int col1, int col2, int col4, int col3)
+                         int16_t ty4, int32_t col1, int32_t col2, int32_t col4, int32_t col3)
 {
-	int num;
-	int i, j, xmin, xmax, ymin, ymax;
-	int cR1, cG1, cB1;
-	int difR, difB, difG;
-	int difX, difY;
-	int posX, posY;
+	int32_t num;
+	int32_t i, j, xmin, xmax, ymin, ymax;
+	int32_t cR1, cG1, cB1;
+	int32_t difR, difB, difG;
+	int32_t difX, difY;
+	int32_t posX, posY;
 
 	if (x1 > drawW && x2 > drawW && x3 > drawW && x4 > drawW)
 		return;
@@ -5720,18 +5720,11 @@ static void drawPoly4TGD(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t
 
 static void drawPoly4TGD_TW(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, int16_t x4,
                             int16_t y4, int16_t tx1, int16_t ty1, int16_t tx2, int16_t ty2, int16_t tx3, int16_t ty3,
-                            int16_t tx4, int16_t ty4, int col1, int col2, int col3, int col4)
+                            int16_t tx4, int16_t ty4, int32_t col1, int32_t col2, int32_t col3, int32_t col4)
 {
 	drawPoly3TGD_TW(x2, y2, x3, y3, x4, y4, tx2, ty2, tx3, ty3, tx4, ty4, col2, col4, col3);
 	drawPoly3TGD_TW(x1, y1, x2, y2, x4, y4, tx1, ty1, tx2, ty2, tx4, ty4, col1, col2, col3);
 }
-
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -6032,7 +6025,7 @@ void drawPoly4GT(uint8_t *baseAddr)
 // SPRITE FUNCS
 ////////////////////////////////////////////////////////////////////////
 
-void DrawSoftwareSpriteTWin(uint8_t *baseAddr, int w, int h)
+void DrawSoftwareSpriteTWin(uint8_t *baseAddr, int32_t w, int32_t h)
 {
 	uint32_t *gpuData = (uint32_t *)baseAddr;
 	int16_t sx0, sy0, sx1, sy1, sx2, sy2, sx3, sy3;
@@ -6069,10 +6062,10 @@ void DrawSoftwareSpriteTWin(uint8_t *baseAddr, int w, int h)
 
 ////////////////////////////////////////////////////////////////////////
 
-void DrawSoftwareSpriteMirror(uint8_t *baseAddr, int w, int h)
+void DrawSoftwareSpriteMirror(uint8_t *baseAddr, int32_t w, int32_t h)
 {
-	int sprtY, sprtX, sprtW, sprtH, lXDir, lYDir;
-	int clutY0, clutX0, clutP, textX0, textY0, sprtYa, sprCY, sprCX, sprA;
+	int32_t sprtY, sprtX, sprtW, sprtH, lXDir, lYDir;
+	int32_t clutY0, clutX0, clutP, textX0, textY0, sprtYa, sprCY, sprCX, sprA;
 	int16_t tC;
 	uint32_t *gpuData = (uint32_t *)baseAddr;
 	sprtY = ly0;
@@ -6182,9 +6175,9 @@ void DrawSoftwareSpriteMirror(uint8_t *baseAddr, int w, int h)
 
 ////////////////////////////////////////////////////////////////////////
 
-static void DrawSoftwareSprite_IL(uint8_t *baseAddr, int16_t w, int16_t h, int tx, int ty)
+static void DrawSoftwareSprite_IL(uint8_t *baseAddr, int16_t w, int16_t h, int32_t tx, int32_t ty)
 {
-	int sprtY, sprtX, sprtW, sprtH, tdx, tdy;
+	int32_t sprtY, sprtX, sprtW, sprtH, tdx, tdy;
 	uint32_t *gpuData = (uint32_t *)baseAddr;
 
 	sprtY = ly0;
@@ -6219,10 +6212,10 @@ static void DrawSoftwareSprite_IL(uint8_t *baseAddr, int16_t w, int16_t h, int t
 
 ////////////////////////////////////////////////////////////////////////
 
-void DrawSoftwareSprite(uint8_t *baseAddr, int16_t w, int16_t h, int tx, int ty)
+void DrawSoftwareSprite(uint8_t *baseAddr, int16_t w, int16_t h, int32_t tx, int32_t ty)
 {
-	int sprtY, sprtX, sprtW, sprtH;
-	int clutY0, clutX0, clutP, textX0, textY0, sprtYa, sprCY, sprCX, sprA;
+	int32_t sprtY, sprtX, sprtW, sprtH;
+	int32_t clutY0, clutX0, clutP, textX0, textY0, sprtYa, sprCY, sprCX, sprA;
 	int16_t tC, tC2;
 	uint32_t *gpuData = (uint32_t *)baseAddr;
 	uint8_t *pV;
@@ -6325,7 +6318,7 @@ void DrawSoftwareSprite(uint8_t *baseAddr, int16_t w, int16_t h, int tx, int ty)
 			{
 				tC = *pV++;
 
-				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[sprA], (((int)psxVuw[clutP + ((tC >> 4) & 0xf)]) << 16) |
+				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[sprA], (((int32_t)psxVuw[clutP + ((tC >> 4) & 0xf)]) << 16) |
 				                                                         psxVuw[clutP + (tC & 0x0f)]);
 			}
 
@@ -6351,7 +6344,7 @@ void DrawSoftwareSprite(uint8_t *baseAddr, int16_t w, int16_t h, int tx, int ty)
 				tC = *pV++;
 				tC2 = *pV++;
 				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[sprA],
-				                          (((int)psxVuw[clutP + tC2]) << 16) | psxVuw[clutP + tC]);
+				                          (((int32_t)psxVuw[clutP + tC2]) << 16) | psxVuw[clutP + tC]);
 			}
 			if (sprCX == sprtW)
 				GetTextureTransColG_SPR(&psxVuw[sprA], psxVuw[clutP + (*pV)]);
@@ -6370,7 +6363,7 @@ void DrawSoftwareSprite(uint8_t *baseAddr, int16_t w, int16_t h, int tx, int ty)
 			for (sprCX = 0; sprCX < sprtW; sprCX += 2, sprA += 2)
 			{
 				GetTextureTransColG32_SPR((uint32_t *)&psxVuw[sprA],
-				                          (((int)psxVuw[(sprCY << 10) + textX0 + sprCX + 1]) << 16) |
+				                          (((int32_t)psxVuw[(sprCY << 10) + textX0 + sprCX + 1]) << 16) |
 				                              psxVuw[(sprCY << 10) + textX0 + sprCX]);
 			}
 			if (sprCX == sprtW)

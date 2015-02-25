@@ -37,27 +37,26 @@ static uint32_t ulStatusControl[256];
 // global GPU vars
 ////////////////////////////////////////////////////////////////////////
 
-static int GPUdataRet;
-int lGPUstatusRet;
+static int32_t GPUdataRet;
+int32_t lGPUstatusRet;
 
 uint32_t dwGPUVersion = 0;
-int iGPUHeight = 512;
-int iGPUHeightMask = 511;
-int GlobalTextIL = 0;
-int iTileCheat = 0;
+int32_t iGPUHeight = 512;
+int32_t iGPUHeightMask = 511;
+int32_t GlobalTextIL = 0;
 
 static uint32_t gpuDataM[256];
 static uint8_t gpuCommand = 0;
-static int gpuDataC = 0;
-static int gpuDataP = 0;
+static int32_t gpuDataC = 0;
+static int32_t gpuDataP = 0;
 
 VRAMLoad_t VRAMWrite;
 VRAMLoad_t VRAMRead;
-int iDataWriteMode;
-int iDataReadMode;
+int32_t iDataWriteMode;
+int32_t iDataReadMode;
 
-int lClearOnSwap;
-int lClearOnSwapColor;
+int32_t lClearOnSwap;
+int32_t lClearOnSwapColor;
 
 // possible psx display widths
 static int16_t dispWidths[8] = {256, 320, 512, 640, 368, 384, 512, 640};
@@ -65,14 +64,11 @@ static int16_t dispWidths[8] = {256, 320, 512, 640, 368, 384, 512, 640};
 PSXDisplay_t PSXDisplay;
 PSXDisplay_t PreviousPSXDisplay;
 TWin_t TWin;
-int16_t imageX0, imageX1;
-int16_t imageY0, imageY1;
 bool bDisplayNotSet = true;
-static int lSelectedSlot = 0;
+static int32_t lSelectedSlot = 0;
 static uint8_t *pGfxCardScreen = 0;
-static int iRenderFVR = 0;
+static int32_t iRenderFVR = 0;
 uint32_t ulGPUInfoVals[16];
-static int iFakePrimBusy = 0;
 static uint32_t vBlank = 0;
 static bool oddLines;
 
@@ -158,21 +154,16 @@ static void osd_close_display(void) // close display
 	glfwTerminate();
 }
 
-static void refreshContext()
-{
-	GLrefresh();
-}
-
 static void window_close_callback(GLFWwindow *window)
 {
 	glfwDestroyWindow(window);
 }
 
-static void framebuffer_size_callback(GLFWwindow *, int width, int height)
+static void framebuffer_size_callback(GLFWwindow *, int32_t width, int32_t height)
 {
 	iResX = width;
 	iResY = height;
-	refreshContext();
+	glViewport(0, 0, iResX, iResY);
 }
 
 static void sysdep_create_display(void) // create display
@@ -180,7 +171,7 @@ static void sysdep_create_display(void) // create display
 
 	glfwInit();
 	// glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	glfwwindow = glfwCreateWindow(iResX, iResY, "troll", NULL, NULL);
+	glfwwindow = glfwCreateWindow(iResX, iResY, "", NULL, NULL);
 	glfwSetWindowCloseCallback(glfwwindow, window_close_callback);
 	glfwSetFramebufferSizeCallback(glfwwindow, framebuffer_size_callback);
 	glfwMakeContextCurrent(glfwwindow);
@@ -217,8 +208,8 @@ int32_t ShutdownPSE()
 	return 0;
 }
 
-int iLastRGB24 = 0;
-static int iSkipTwo = 0;
+int32_t iLastRGB24 = 0;
+static int32_t iSkipTwo = 0;
 
 void updateDisplay(void) // UPDATE DISPLAY
 {
@@ -324,7 +315,7 @@ void updateFrontDisplay(void)
 
 static void ChangeDispOffsetsX(void) // CENTER X
 {
-	int lx, l;
+	int32_t lx, l;
 	int16_t sO;
 
 	if (!PSXDisplay.Range.x1)
@@ -332,7 +323,7 @@ static void ChangeDispOffsetsX(void) // CENTER X
 
 	l = PSXDisplay.DisplayMode.x;
 
-	l *= (int)PSXDisplay.Range.x1; // some funky calculation
+	l *= (int32_t)PSXDisplay.Range.x1; // some funky calculation
 	l /= 2560;
 	lx = l;
 	l &= 0xfffffff8;
@@ -373,7 +364,7 @@ static void ChangeDispOffsetsX(void) // CENTER X
 
 static void ChangeDispOffsetsY(void) // CENTER Y
 {
-	int iT;
+	int32_t iT;
 	int16_t sO; // store previous y size
 
 	if (PSXDisplay.PAL)
@@ -414,9 +405,10 @@ static void updateDisplayIfChanged(void)
 	}
 	else // some res change?
 	{
-		glLoadIdentity();
-		glOrtho(0, PSXDisplay.DisplayModeNew.x, // -> new psx resolution
-		        PSXDisplay.DisplayModeNew.y, 0, -1, 1);
+			projectionMatrix = glm::ortho<float>(0, PSXDisplay.DisplayModeNew.x, // -> new psx resolution
+			        PSXDisplay.DisplayModeNew.y, 0, -1, 1); //if we don't use float, we crash on a divide by 0 error
+		glLoadMatrixf(&projectionMatrix[0][0]);
+
 	}
 
 	bDisplayNotSet = true; // re-calc offsets/display area
@@ -484,23 +476,6 @@ uint32_t ReadStatusPSE()
 	else
 	{ // Oddlines and not vblank
 		STATUSREG |= GPUSTATUS_ODDLINES;
-	}
-
-	if (iFakePrimBusy) // 27.10.2007 - emulating some 'busy' while drawing... pfff... not perfect, but since our
-	                   // emulated dma is not done in an extra thread...
-	{
-		iFakePrimBusy--;
-
-		if (iFakePrimBusy & 1) // we do a busy-idle-busy-idle sequence after/while drawing prims
-		{
-			GPUIsBusy();
-			GPUIsNotReadyForCommands();
-		}
-		else
-		{
-			GPUIsIdle();
-			GPUIsReadyForCommands();
-		}
 	}
 
 	return STATUSREG;
@@ -805,10 +780,10 @@ static __inline void FinishedVRAMRead(void)
 // slow!)
 ////////////////////////////////////////////////////////////////////////
 
-void CheckVRamReadEx(int x, int y, int dx, int dy)
+void CheckVRamReadEx(int32_t x, int32_t y, int32_t dx, int32_t dy)
 {
 	uint16_t sArea;
-	int ux, uy, udx, udy, wx, wy;
+	int32_t ux, uy, udx, udy, wx, wy;
 	uint16_t *p1, *p2;
 	float XS, YS;
 	uint8_t *ps;
@@ -891,8 +866,8 @@ void CheckVRamReadEx(int x, int y, int dx, int dy)
 	XS = (float)iResX / (float)wx;
 	YS = (float)iResY / (float)wy;
 
-	dx = (int)((float)(dx)*XS);
-	dy = (int)((float)(dy)*YS);
+	dx = (int32_t)((float)(dx)*XS);
+	dy = (int32_t)((float)(dy)*YS);
 
 	if (dx > iResX)
 		dx = iResX;
@@ -942,7 +917,7 @@ void CheckVRamReadEx(int x, int y, int dx, int dy)
 		{
 			if (p1 >= psxVuw && p1 < psxVuw_eom)
 			{
-				px = ps + (3 * ((int)((float)x * XS)) + (3 * dx) * ((int)((float)y * YS)));
+				px = ps + (3 * ((int32_t)((float)x * XS)) + (3 * dx) * ((int32_t)((float)y * YS)));
 				sx = (*px) >> 3;
 				px++;
 				s = sx;
@@ -973,11 +948,11 @@ void CheckVRamReadEx(int x, int y, int dx, int dy)
 // slow!)
 ////////////////////////////////////////////////////////////////////////
 
-void CheckVRamRead(int x, int y, int dx, int dy, bool bFront)
+void CheckVRamRead(int32_t x, int32_t y, int32_t dx, int32_t dy, bool bFront)
 {
 	uint16_t sArea;
 	uint16_t *p;
-	int ux, uy, udx, udy, wx, wy;
+	int32_t ux, uy, udx, udy, wx, wy;
 	float XS, YS;
 	uint8_t *ps, *px;
 	uint16_t s = 0, sx;
@@ -1061,10 +1036,10 @@ void CheckVRamRead(int x, int y, int dx, int dy, bool bFront)
 	XS = (float)iResX / (float)wx;
 	YS = (float)iResY / (float)wy;
 
-	dx = (int)((float)(dx)*XS);
-	dy = (int)((float)(dy)*YS);
-	x = (int)((float)x * XS);
-	y = (int)((float)y * YS);
+	dx = (int32_t)((float)(dx)*XS);
+	dy = (int32_t)((float)(dy)*YS);
+	x = (int32_t)((float)x * XS);
+	y = (int32_t)((float)y * YS);
 
 	dx -= x;
 	dy -= y;
@@ -1115,7 +1090,7 @@ void CheckVRamRead(int x, int y, int dx, int dy, bool bFront)
 		{
 			if (p >= psxVuw && p < psxVuw_eom)
 			{
-				px = ps + (3 * ((int)((float)x * XS)) + (3 * dx) * ((int)((float)y * YS)));
+				px = ps + (3 * ((int32_t)((float)x * XS)) + (3 * dx) * ((int32_t)((float)y * YS)));
 				sx = (*px) >> 3;
 				px++;
 				s = sx;
@@ -1137,9 +1112,9 @@ void CheckVRamRead(int x, int y, int dx, int dy, bool bFront)
 // core read from vram
 ////////////////////////////////////////////////////////////////////////
 
-void ReadDataMemPSE(uint32_t *pMem, int iSize)
+void ReadDataMemPSE(uint32_t *pMem, int32_t iSize)
 {
-	int i;
+	int32_t i;
 
 	if (iDataReadMode != DR_VRAMTRANSFER)
 		return;
@@ -1302,11 +1277,11 @@ static const uint8_t primTableCX[256] = {
 // processes data send to GPU data register
 ////////////////////////////////////////////////////////////////////////
 
-void WriteDataMemPSE(uint32_t *pMem, int iSize)
+void WriteDataMemPSE(uint32_t *pMem, int32_t iSize)
 {
 	uint8_t command;
 	uint32_t gdata = 0;
-	int i = 0;
+	int32_t i = 0;
 	GPUIsBusy();
 	GPUIsNotReadyForCommands();
 
@@ -1513,7 +1488,7 @@ int32_t FreezePSE(uint32_t ulGetFreezeData, GPUFreeze_t *pF)
 {
 	if (ulGetFreezeData == 2)
 	{
-		int lSlotNum = *((int *)pF);
+		int32_t lSlotNum = *((int32_t *)pF);
 		if (lSlotNum < 0)
 			return 0;
 		if (lSlotNum > 8)
@@ -1558,19 +1533,17 @@ int32_t FreezePSE(uint32_t ulGetFreezeData, GPUFreeze_t *pF)
 	return 1;
 }
 
-void VBlankPSE(int val)
+void VBlankPSE(int32_t val)
 {
 	vBlank = val;
 	oddLines = oddLines ? false : true; // bit changes per frame when not interlaced
-	                                    // printf("VB %x (%x)\n", oddLines, vBlank);
 }
 
-void HSyncPSE(int val)
+void HSyncPSE(int32_t val)
 {
 	// Interlaced mode - update bit every scanline
 	if (PSXDisplay.Interlaced)
 	{
 		oddLines = ((val % 2) ? false : true);
 	}
-	// printf("HS %x (%x)\n", oddLines, vBlank);
 }

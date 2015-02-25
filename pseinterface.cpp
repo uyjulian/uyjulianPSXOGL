@@ -49,7 +49,7 @@ extern "C" int32_t GPUshutdown(void)
 	return ShutdownPSE();
 }
 
-extern "C" void GPUcursor(int, int, int)
+extern "C" void GPUcursor(int32_t, int32_t, int32_t)
 {
 }
 
@@ -68,7 +68,7 @@ extern "C" void GPUwriteStatus(uint32_t gdata)
 	return WriteStatusPSE(gdata);
 }
 
-extern "C" void GPUreadDataMem(uint32_t *pMem, int iSize)
+extern "C" void GPUreadDataMem(uint32_t *pMem, int32_t iSize)
 {
 	return ReadDataMemPSE(pMem, iSize);
 }
@@ -78,7 +78,7 @@ extern "C" uint32_t GPUreadData(void)
 	return ReadDataPSE();
 }
 
-extern "C" void GPUwriteDataMem(uint32_t *pMem, int iSize)
+extern "C" void GPUwriteDataMem(uint32_t *pMem, int32_t iSize)
 {
 	return WriteDataMemPSE(pMem, iSize);
 }
@@ -128,12 +128,12 @@ extern "C" void GPUvisualVibration(uint32_t, uint32_t)
 {
 }
 
-extern "C" void GPUvBlank(int val)
+extern "C" void GPUvBlank(int32_t val)
 {
 	return VBlankPSE(val);
 }
 
-extern "C" void GPUhSync(int val)
+extern "C" void GPUhSync(int32_t val)
 {
 	return HSyncPSE(val);
 }

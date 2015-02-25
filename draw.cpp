@@ -23,19 +23,23 @@
 
 // resolution/ratio vars
 
-int iResX = 640;
-int iResY = 480;
+int32_t iResX = 640;
+int32_t iResY = 480;
 
 // drawing/coord vars
 
 OGLVertex vertex[4];
 GLubyte gl_ux[8];
 GLubyte gl_vy[8];
-int16_t sprtY, sprtX, sprtH, sprtW;
+int32_t sprtY, sprtX, sprtH, sprtW;
+static glm::mat4 textureMatrix;
+glm::mat4 projectionMatrix;
+GLuint vertexShader;
+GLuint glProgram;
 
 // gl utils
 
-void clearWithColor(int clearColor)
+void clearWithColor(int32_t clearColor)
 {
 	GLclampf g, b, r;
 
@@ -59,24 +63,19 @@ void clearToBlack(void)
 // Initialize OGL
 ////////////////////////////////////////////////////////////////////////
 
-int GLinitialize()
+int32_t GLinitialize()
 {
+	projectionMatrix = glm::ortho<float>(0, PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0, -1, 1); //if we don't use float, we crash on a divide by 0 error
+	textureMatrix = glm::scale(glm::mat4(), glm::vec3(1.0f / 256.0f, 1.0f / 256.0f, 1.0f));
+
 	glViewport(0, 0, iResX, iResY);
 
-	glMatrixMode(GL_TEXTURE); // init psx tex sow and tow
-	glLoadIdentity();
-	glScalef(1.0f / 256.0f, 1.0f / 256.0f, 1.0f);
-
-	glMatrixMode(GL_PROJECTION); // init projection with psx resolution
-	glLoadIdentity();
-	glOrtho(0, PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0, -1, 1);
+	glMatrixMode(GL_TEXTURE);
+	glLoadMatrixf(&textureMatrix[0][0]);
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(&projectionMatrix[0][0]);
 
 	clearToBlack();
-
-	glPolygonMode(GL_FRONT, GL_FILL);
-	glPolygonMode(GL_BACK, GL_FILL);
-
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	TCF[0] = XP8RGBA_0;
 
@@ -100,33 +99,19 @@ int GLinitialize()
 	return 0;
 }
 
-int GLrefresh()
-{
-	glViewport(0, 0, iResX, iResY);
-
-	glMatrixMode(GL_PROJECTION); // init projection with psx resolution
-	glLoadIdentity();
-	glOrtho(0, PSXDisplay.DisplayMode.x, PSXDisplay.DisplayMode.y, 0, -1, 1);
-
-	clearToBlack();
-
-	return 0;
-}
-
 void GLcleanup()
 {
 	CleanupTextureStore();
 }
 
 ////////////////////////////////////////////////////////////////////////
-// SetDisplaySettings: "simply" calcs the new drawing area and updates
-//                     the ogl clipping (scissor)
+// SetDisplaySettings: "simply" calcs the new drawing area 
 
 void SetOGLDisplaySettings(bool DisplaySet)
 {
 	static RECT rprev = {0, 0, 0, 0};
-	static int iOldX = 0;
-	static int iOldY = 0;
+	static int32_t iOldX = 0;
+	static int32_t iOldY = 0;
 	RECT r;
 	float XS, YS;
 
@@ -181,7 +166,7 @@ void SetOGLDisplaySettings(bool DisplaySet)
 
 	if (PreviousPSXDisplay.Range.x0)
 	{
-		int16_t s = PreviousPSXDisplay.Range.x0 + PreviousPSXDisplay.Range.x1;
+		int32_t s = PreviousPSXDisplay.Range.x0 + PreviousPSXDisplay.Range.x1;
 
 		r.left += PreviousPSXDisplay.Range.x0 + 1;
 
@@ -195,7 +180,7 @@ void SetOGLDisplaySettings(bool DisplaySet)
 
 	if (PreviousPSXDisplay.Range.y0)
 	{
-		int16_t s = PreviousPSXDisplay.Range.y0 + PreviousPSXDisplay.Range.y1;
+		int32_t s = PreviousPSXDisplay.Range.y0 + PreviousPSXDisplay.Range.y1;
 
 		r.top += PreviousPSXDisplay.Range.y0 + 1;
 		r.bottom += PreviousPSXDisplay.Range.y0;
@@ -208,10 +193,10 @@ void SetOGLDisplaySettings(bool DisplaySet)
 
 	// Set the ClipArea variables to reflect the new screen,
 	// offset from zero (since it is a new display buffer)
-	r.left = (int)(((float)(r.left)) * XS);
-	r.top = (int)(((float)(r.top)) * YS);
-	r.right = (int)(((float)(r.right + 1)) * XS);
-	r.bottom = (int)(((float)(r.bottom + 1)) * YS);
+	r.left = (int32_t)(((float)(r.left)) * XS);
+	r.top = (int32_t)(((float)(r.top)) * YS);
+	r.right = (int32_t)(((float)(r.right + 1)) * XS);
+	r.bottom = (int32_t)(((float)(r.bottom + 1)) * YS);
 
 	// Limit clip area to the screen size
 	if (r.left > iResX)

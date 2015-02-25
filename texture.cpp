@@ -64,19 +64,18 @@
 
 static GLubyte ubPaletteBuffer[256][4];
 static GLuint gTexMovieName = 0;
-static GLuint gTexBlurName = 0;
 GLuint gTexFrameName = 0;
-static int iTexGarbageCollection = 1;
+static int32_t iTexGarbageCollection = 1;
 static uint32_t dwTexPageComp = 0;
-static int iClampType = GL_CLAMP_TO_EDGE;
+static int32_t iClampType = GL_CLAMP_TO_EDGE;
 
-void (*LoadSubTexFn)(int, int, int16_t, int16_t);
+void (*LoadSubTexFn)(int32_t, int32_t, int16_t, int16_t);
 
 ////////////////////////////////////////////////////////////////////////
 
-uint8_t *CheckTextureInSubSCache(int TextureMode, uint32_t GivenClutId, uint16_t *pCache);
-void LoadSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy);
-void LoadPackedSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy);
+uint8_t *CheckTextureInSubSCache(int32_t TextureMode, uint32_t GivenClutId, uint16_t *pCache);
+void LoadSubTexturePageSort(int32_t pageid, int32_t mode, int16_t cx, int16_t cy);
+void LoadPackedSubTexturePageSort(int32_t pageid, int32_t mode, int16_t cx, int16_t cy);
 void DefineSubTextureSort(void);
 
 ////////////////////////////////////////////////////////////////////////
@@ -86,14 +85,14 @@ void DefineSubTextureSort(void);
 static GLint giWantedRGBA = 4;
 static GLenum giWantedFMT = GL_RGBA;
 static GLenum giWantedTYPE = GL_UNSIGNED_BYTE;
-int GlobalTexturePage;
+int32_t GlobalTexturePage;
 static GLint XTexS;
 static GLint YTexS;
 static GLint DXTexS;
 static GLint DYTexS;
-static int iSortTexCnt = 32;
-static int iFrameTexType = 1;
-int iFrameReadType = 0;
+static int32_t iSortTexCnt = 32;
+static int32_t iFrameTexType = 1;
+int32_t iFrameReadType = 0;
 
 uint32_t (*TCF[2])(uint32_t);
 
@@ -137,9 +136,9 @@ static GLuint uiStexturePage[MAXSORTTEX_MAX];
 
 static uint16_t usLRUTexPage = 0;
 
-static int iMaxTexWnds = 0;
-static int iTexWndTurn = 0;
-static int iTexWndLimit = MAXWNDTEXCACHE / 2;
+static int32_t iMaxTexWnds = 0;
+static int32_t iTexWndTurn = 0;
+static int32_t iTexWndLimit = MAXWNDTEXCACHE / 2;
 
 static GLubyte *texturepart = NULL;
 static GLubyte *texturebuffer = NULL;
@@ -182,8 +181,8 @@ void CheckTextureMemory(void)
 {
 	GLboolean b;
 	GLboolean *bDetail;
-	int i, iCnt;
-	int iTSize;
+	int32_t i, iCnt;
+	int32_t iTSize;
 	char *p;
 
 	iTSize = 256;
@@ -234,7 +233,7 @@ void CheckTextureMemory(void)
 
 void InitializeTextureStore()
 {
-	int i, j;
+	int32_t i, j;
 
 	if (iGPUHeight == 1024)
 	{
@@ -284,7 +283,7 @@ void InitializeTextureStore()
 
 void CleanupTextureStore()
 {
-	int i, j;
+	int32_t i, j;
 	textureWndCacheEntry *tsx;
 	//----------------------------------------------------//
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -313,10 +312,6 @@ void CleanupTextureStore()
 		glDeleteTextures(1, &gTexFrameName); // -> delete it
 	gTexFrameName = 0;                       // no more movie tex
 	//----------------------------------------------------//
-	if (gTexBlurName != 0)                  // some 15bit framebuffer tex?
-		glDeleteTextures(1, &gTexBlurName); // -> delete it
-	gTexBlurName = 0;                       // no more movie tex
-	//----------------------------------------------------//
 	for (i = 0; i < 3; i++)             // -> loop
 		for (j = 0; j < MAXTPAGES; j++) // loop tex pages
 		{
@@ -340,7 +335,7 @@ void CleanupTextureStore()
 
 void ResetTextureArea(bool bDelTex)
 {
-	int i, j;
+	int32_t i, j;
 	textureSubCacheEntryS *tss;
 	EXLong *lu;
 	textureWndCacheEntry *tsx;
@@ -394,9 +389,9 @@ void ResetTextureArea(bool bDelTex)
 // Invalidate tex windows
 ////////////////////////////////////////////////////////////////////////
 
-static void InvalidateWndTextureArea(int X, int Y, int W, int H)
+static void InvalidateWndTextureArea(int32_t X, int32_t Y, int32_t W, int32_t H)
 {
-	int i, px1, px2, py1, py2, iYM = 1;
+	int32_t i, px1, px2, py1, py2, iYM = 1;
 	textureWndCacheEntry *tsw = wcWndtexStore;
 
 	W += X - 1;
@@ -477,7 +472,7 @@ static void InvalidateWndTextureArea(int X, int Y, int W, int H)
 static void MarkFree(textureSubCacheEntryS *tsx)
 {
 	EXLong *ul, *uls;
-	int j, iMax;
+	int32_t j, iMax;
 	uint8_t x1, y1, dx, dy;
 
 	uls = pxSsubtexLeft[tsx->cTexID];
@@ -518,12 +513,12 @@ static void MarkFree(textureSubCacheEntryS *tsx)
 	}
 }
 
-static void InvalidateSubSTextureArea(int X, int Y, int W, int H)
+static void InvalidateSubSTextureArea(int32_t X, int32_t Y, int32_t W, int32_t H)
 {
-	int i, j, k, iMax, px, py, px1, px2, py1, py2, iYM = 1;
+	int32_t i, j, k, iMax, px, py, px1, px2, py1, py2, iYM = 1;
 	EXLong npos;
 	textureSubCacheEntryS *tsb;
-	int x1, x2, y1, y2, xa, sw;
+	int32_t x1, x2, y1, y2, xa, sw;
 
 	W += X - 1;
 	H += Y - 1;
@@ -681,7 +676,7 @@ void InvalidateTextureAreaEx(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-void InvalidateTextureArea(int X, int Y, int W, int H)
+void InvalidateTextureArea(int32_t X, int32_t Y, int32_t W, int32_t H)
 {
 	if (W == 0 && H == 0)
 		return;
@@ -717,7 +712,7 @@ static void DefineTextureWnd(void)
 // tex window: load stretched
 ////////////////////////////////////////////////////////////////////////
 
-static void LoadStretchWndTexturePage(int pageid, int mode, int16_t cx, int16_t cy)
+static void LoadStretchWndTexturePage(int32_t pageid, int32_t mode, int16_t cx, int16_t cy)
 {
 	uint32_t start, row, column, j, sxh, sxm, ldx, ldy, ldxo, s;
 	uint32_t palstart;
@@ -725,7 +720,7 @@ static void LoadStretchWndTexturePage(int pageid, int mode, int16_t cx, int16_t 
 	uint8_t *cSRCPtr, *cOSRCPtr;
 	uint16_t *wSRCPtr, *wOSRCPtr;
 	uint32_t LineOffset;
-	int pmult = pageid / 16;
+	int32_t pmult = pageid / 16;
 	uint32_t (*LTCOL)(uint32_t);
 
 	LTCOL = TCF[DrawSemiTrans];
@@ -983,7 +978,7 @@ static void LoadStretchWndTexturePage(int pageid, int mode, int16_t cx, int16_t 
 // tex window: load simple
 ////////////////////////////////////////////////////////////////////////
 
-static void LoadWndTexturePage(int pageid, int mode, int16_t cx, int16_t cy)
+static void LoadWndTexturePage(int32_t pageid, int32_t mode, int16_t cx, int16_t cy)
 {
 	uint32_t start, row, column, j, sxh, sxm;
 	uint32_t palstart;
@@ -991,7 +986,7 @@ static void LoadWndTexturePage(int pageid, int mode, int16_t cx, int16_t cy)
 	uint8_t *cSRCPtr;
 	uint16_t *wSRCPtr;
 	uint32_t LineOffset;
-	int pmult = pageid / 16;
+	int32_t pmult = pageid / 16;
 	uint32_t (*LTCOL)(uint32_t);
 
 	LTCOL = TCF[DrawSemiTrans];
@@ -1157,10 +1152,10 @@ static void LoadWndTexturePage(int pageid, int mode, int16_t cx, int16_t cy)
 // tex window: main selecting, cache handler included
 ////////////////////////////////////////////////////////////////////////
 
-GLuint LoadTextureWnd(int pageid, int TextureMode, uint32_t GivenClutId)
+GLuint LoadTextureWnd(int32_t pageid, int32_t TextureMode, uint32_t GivenClutId)
 {
 	textureWndCacheEntry *ts, *tsx = NULL;
-	int i;
+	int32_t i;
 	int16_t cx, cy;
 	EXLong npos;
 
@@ -1297,7 +1292,7 @@ static void DefineTextureMovie(void)
 
 static GLuint LoadTextureMovieFast(void)
 {
-	int row, column;
+	int32_t row, column;
 	uint32_t startxy;
 
 	{
@@ -1354,7 +1349,7 @@ GLuint LoadTextureMovie(void)
 
 static GLuint BlackFake15BitTexture(void)
 {
-	int pmult;
+	int32_t pmult;
 	int16_t x1, x2, y1, y2;
 
 	if (PSXDisplay.InterlacedTest)
@@ -1416,13 +1411,13 @@ static GLuint BlackFake15BitTexture(void)
 bool bFakeFrontBuffer = false;
 bool bIgnoreNextTile = false;
 
-static int iFTex = 512;
+static int32_t iFTex = 512;
 
 static GLuint Fake15BitTexture(void)
 {
-	int pmult;
+	int32_t pmult;
 	int16_t x1, x2, y1, y2;
-	int iYAdjust;
+	int32_t iYAdjust;
 	float ScaleX, ScaleY;
 	RECT rSrc;
 
@@ -1523,7 +1518,7 @@ static GLuint Fake15BitTexture(void)
 
 	iYAdjust = (y1 + y2) - PSXDisplay.DisplayMode.y;
 	if (iYAdjust > 0)
-		iYAdjust = (int)((float)iYAdjust * ScaleY) + 1;
+		iYAdjust = (int32_t)((float)iYAdjust * ScaleY) + 1;
 	else
 		iYAdjust = 0;
 
@@ -1632,7 +1627,7 @@ static GLuint Fake15BitTexture(void)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-void LoadSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy)
+void LoadSubTexturePageSort(int32_t pageid, int32_t mode, int16_t cx, int16_t cy)
 {
 	uint32_t start, row, column, j, sxh, sxm;
 	uint32_t palstart;
@@ -1647,7 +1642,7 @@ void LoadSubTexturePageSort(int pageid, int mode, int16_t cx, int16_t cy)
 	uint32_t y2 = gl_ux[4];
 	uint32_t dx = x2 - x1 + 1;
 	uint32_t dy = y2 - y1 + 1;
-	int pmult = pageid / 16;
+	int32_t pmult = pageid / 16;
 	uint32_t (*LTCOL)(uint32_t);
 
 	LTCOL = TCF[DrawSemiTrans];
@@ -1972,7 +1967,7 @@ static void DoTexGarbageCollection(void)
 {
 	static uint16_t LRUCleaned = 0;
 	uint16_t iC, iC1, iC2;
-	int i, j, iMax;
+	int32_t i, j, iMax;
 	textureSubCacheEntryS *tsb;
 
 	iC = 4;           //=iSortTexCnt/2,
@@ -2015,13 +2010,13 @@ static void DoTexGarbageCollection(void)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-uint8_t *CheckTextureInSubSCache(int TextureMode, uint32_t GivenClutId, uint16_t *pCache)
+uint8_t *CheckTextureInSubSCache(int32_t TextureMode, uint32_t GivenClutId, uint16_t *pCache)
 {
 	textureSubCacheEntryS *tsx, *tsb, *tsg; //, *tse=NULL;
-	int i, iMax;
+	int32_t i, iMax;
 	EXLong npos;
 	uint8_t cx, cy;
-	int iC, j, k;
+	int32_t iC, j, k;
 	uint32_t rx, ry, mx, my;
 	EXLong *ul = 0, *uls;
 	EXLong rfree;
@@ -2072,8 +2067,8 @@ uint8_t *CheckTextureInSubSCache(int TextureMode, uint32_t GivenClutId, uint16_t
 	cXAdj = 1;
 	cYAdj = 1;
 
-	rx = (int)gl_ux[6] - (int)gl_ux[7];
-	ry = (int)gl_ux[4] - (int)gl_ux[5];
+	rx = (int32_t)gl_ux[6] - (int32_t)gl_ux[7];
+	ry = (int32_t)gl_ux[4] - (int32_t)gl_ux[5];
 
 	tsx = NULL;
 	tsb = tsg + 1;
@@ -2123,8 +2118,8 @@ uint8_t *CheckTextureInSubSCache(int TextureMode, uint32_t GivenClutId, uint16_t
 				if (tsx) // 3. if one or more found, create a new rect with bigger size
 				{
 					*((uint32_t *)&gl_ux[4]) = npos.l = rfree.l;
-					rx = (int)rfree.c[2] - (int)rfree.c[3];
-					ry = (int)rfree.c[0] - (int)rfree.c[1];
+					rx = (int32_t)rfree.c[2] - (int32_t)rfree.c[3];
+					ry = (int32_t)rfree.c[0] - (int32_t)rfree.c[1];
 					DoTexGarbageCollection();
 
 					goto ENDLOOP3;
@@ -2363,13 +2358,13 @@ ENDLOOP:
 
 static bool GetCompressTexturePlace(textureSubCacheEntryS *tsx)
 {
-	int i, j, k, iMax, iC;
+	int32_t i, j, k, iMax, iC;
 	uint32_t rx, ry, mx, my;
 	EXLong *ul = 0, *uls, rfree;
 	uint8_t cXAdj = 1, cYAdj = 1;
 
-	rx = (int)tsx->pos.c[2] - (int)tsx->pos.c[3];
-	ry = (int)tsx->pos.c[0] - (int)tsx->pos.c[1];
+	rx = (int32_t)tsx->pos.c[2] - (int32_t)tsx->pos.c[3];
+	ry = (int32_t)tsx->pos.c[0] - (int32_t)tsx->pos.c[1];
 
 	rx += 3;
 	if (rx > 255)
@@ -2519,10 +2514,10 @@ TENDLOOP:
 static void CompressTextureSpace(void)
 {
 	textureSubCacheEntryS *tsx, *tsg, *tsb;
-	int i, j, k, m, n, iMax;
+	int32_t i, j, k, m, n, iMax;
 	EXLong *ul, r, opos;
 	int16_t sOldDST = DrawSemiTrans, cx, cy;
-	int lOGTP = GlobalTexturePage;
+	int32_t lOGTP = GlobalTexturePage;
 	uint32_t l, row;
 	uint32_t *lSRCPtr;
 
@@ -2670,7 +2665,7 @@ static void CompressTextureSpace(void)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-GLuint SelectSubTextureS(int TextureMode, uint32_t GivenClutId)
+GLuint SelectSubTextureS(int32_t TextureMode, uint32_t GivenClutId)
 {
 	uint8_t *OPtr;
 	uint16_t iCache;
