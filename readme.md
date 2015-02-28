@@ -17,7 +17,7 @@ Todo
 
 • Remove ugly hacks/ugly code
 
-• Don't use old OpenGL functions
+• Don't use old OpenGL functions (can't do this currently because Mac OS X doesn't support compatibility contexts, only core, ugh)
 
 • Reduce usage of casts
 

@@ -3,7 +3,6 @@ project(OpenGLPSX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(OpenGLPSXSources draw.cpp gpu.cpp prim.cpp soft.cpp texture.cpp pseinterface.cpp externals.h)
 
-
 find_package(OpenGL)
 find_package(GLFW)
 find_package(GLM)
@@ -14,8 +13,6 @@ include_directories(${GLM_INCLUDE_DIRS})
 
 add_definitions(-std=c++11)
 add_definitions(-march=native)
-add_definitions(-Wall)
-add_definitions(-Weverything)
 
 set(OpenGLPSXLibs ${X11_LIBRARIES} ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} m)
 

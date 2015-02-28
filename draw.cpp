@@ -117,7 +117,6 @@ void SetOGLDisplaySettings(bool DisplaySet)
 
 	bDisplayNotSet = false;
 
-	//----------------------------------------------------// that's a whole screen upload
 	if (!DisplaySet)
 	{
 		PSXDisplay.GDrawOffset.x = 0;
@@ -129,7 +128,6 @@ void SetOGLDisplaySettings(bool DisplaySet)
 		rprev.left = rprev.left + 1;
 		return;
 	}
-	//----------------------------------------------------//
 
 	PSXDisplay.GDrawOffset.y = PreviousPSXDisplay.DisplayPosition.y;
 	PSXDisplay.GDrawOffset.x = PreviousPSXDisplay.DisplayPosition.x;
